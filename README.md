@@ -7,17 +7,17 @@
 
 An educational, character-level transformer language model framework built in PyTorch. FundamentaLLM makes core LLM concepts approachable while maintaining production-quality engineering practices: type safety, comprehensive tests, and configuration-first design.
 
-## ✨ Features
+## Features
 
-- 🎯 **Educational Focus**: Clean, well-documented code designed for learning
-- 🔧 **Complete Pipeline**: Tokenization → Training → Generation → Evaluation
-- 🎨 **Interactive CLI**: User-friendly commands with Rich-powered REPL
-- ⚡ **Modern PyTorch**: Mixed precision training, gradient clipping, LR scheduling
-- 📊 **Comprehensive Testing**: 178 tests with >85% coverage
-- 📝 **Extensive Docs**: Getting started guide, training best practices, architecture deep dive
-- 🔄 **Checkpoint Management**: Save/load/resume training with full state preservation
+- **Educational Focus**: Clean, well-documented code designed for learning
+- **Complete Pipeline**: Tokenization → Training → Generation → Evaluation
+- **Interactive CLI**: User-friendly commands with Rich-powered REPL
+- **Modern PyTorch**: Mixed precision training, gradient clipping, LR scheduling
+- **Comprehensive Testing**: 178 tests with >85% coverage
+- **Extensive Docs**: Getting started guide, training best practices, architecture deep dive
+- **Checkpoint Management**: Save/load/resume training with full state preservation
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -66,7 +66,7 @@ Hello! How can I help you today?
 Updated setting: temperature=1.0
 ```
 
-## 📚 Documentation
+## Documentation
 
 - **[Getting Started Guide](docs/getting_started.md)** - Installation, first model, troubleshooting
 - **[Training Guide](docs/training_guide.md)** - Hyperparameter tuning, best practices, performance tips
@@ -74,7 +74,7 @@ Updated setting: temperature=1.0
 - **[Example Notebooks](docs/notebooks/)** - Interactive tutorials (coming soon)
 - **[API Reference](docs/api_reference.md)** - Complete API documentation (coming soon)
 
-## 🏗️ Architecture
+## Architecture
 
 FundamentaLLM implements a decoder-only transformer (GPT-style) with:
 
@@ -92,7 +92,7 @@ Input Text → Tokenizer → Dataset → Model → Training → Checkpoints
 
 See [Architecture Guide](docs/architecture.md) for detailed explanation.
 
-## 🎮 CLI Commands
+## CLI Commands
 
 ### Train
 
@@ -132,7 +132,7 @@ Options:
   --json                 Output as JSON
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 Use YAML files for reproducible training:
 
@@ -159,7 +159,7 @@ training:
 - `configs/default.yaml` - Balanced performance (~40M params)
 - `configs/large.yaml` - High capacity, resource-intensive (~150M params)
 
-## 🧪 Development
+## Development
 
 ### Setup Development Environment
 
@@ -206,24 +206,15 @@ make pre-commit
 make help  # Show all commands
 ```
 
-## 📊 Project Status
+## Project Status
 
 **Current Version:** 0.1.0 (Release Candidate)
-
-**Completed Phases:**
-- ✅ Phase 1: Project scaffolding
-- ✅ Phase 2: Data pipeline (tokenization, datasets, loaders)
-- ✅ Phase 3: Model architecture (transformer, attention, embeddings)
-- ✅ Phase 4: Training infrastructure (trainer, optimizer, checkpoints)
-- ✅ Phase 5: Generation & evaluation (sampling, metrics)
-- ✅ Phase 6: CLI & interactive interface
-- ✅ Phase 7: Documentation & polish
 
 **Test Coverage:** 178 passing tests, >85% coverage
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -237,7 +228,7 @@ Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 7. Push: `git push origin feature/amazing-feature`
 8. Open a Pull Request
 
-## 📖 Learning Resources
+## Learning Resources
 
 **Recommended Reading:**
 - [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (Vaswani et al., 2017)
@@ -249,7 +240,7 @@ Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - [Hugging Face Transformers](https://github.com/huggingface/transformers) - Production library
 - [nanoGPT](https://github.com/karpathy/nanoGPT) - Minimalist character-level GPT
 
-## 📋 Roadmap
+## Roadmap
 
 **Future Enhancements:**
 - [ ] Subword tokenization (BPE, WordPiece)
@@ -261,25 +252,6 @@ Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - [ ] More example notebooks
 - [ ] Gradio/Streamlit web interface
 
-See [Phase Plans](PLAN_INDEX.md) for detailed roadmap.
-
-## 📄 License
+## License
 
 This project is licensed under the AGPL-3.0 License - see [LICENSE](LICENSE) for details.
-
-## 🙏 Acknowledgments
-
-- PyTorch team for the excellent deep learning framework
-- Vaswani et al. for the Transformer architecture
-- Andrej Karpathy for educational LLM resources
-- The open-source community for inspiration and tools
-
-## 📞 Support
-
-- **Issues:** [GitHub Issues](https://github.com/your-org/fundamentallm/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/your-org/fundamentallm/discussions)
-- **Documentation:** [docs/](docs/)
-
----
-
-**Made with ❤️ for learning and education**
