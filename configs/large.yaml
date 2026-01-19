@@ -1,0 +1,10 @@
+model:
+  d_model: 768
+  num_heads: 12
+  num_layers: 12
+  sequence_length: 512
+
+training:
+  batch_size: 64
+  max_epochs: 20
+  learning_rate: 1.0e-4

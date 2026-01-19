@@ -1,0 +1,335 @@
+"""Click-based command line interface for FundamentaLLM."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Optional, Tuple
+
+import click
+import torch
+import yaml
+
+from fundamentallm.config import TransformerConfig
+from fundamentallm.config.training import TrainingConfig
+from fundamentallm.data.loaders import create_dataloaders
+from fundamentallm.data.tokenizers.character import CharacterTokenizer
+from fundamentallm.evaluation.evaluator import ModelEvaluator
+from fundamentallm.generation.generator import TextGenerator
+from fundamentallm.training.losses import LanguageModelingLoss
+from fundamentallm.training.optimizers import OptimizerBuilder
+from fundamentallm.training.schedulers import (
+    ConstantLRScheduler,
+    CosineAnnealingScheduler,
+    ExponentialDecayScheduler,
+    LearningRateScheduler,
+    LinearWarmup,
+)
+from fundamentallm.training.trainer import Trainer
+from fundamentallm.utils.logging import get_logger, setup_logging
+from fundamentallm.utils.paths import ensure_dir
+from fundamentallm.utils.random import set_seed
+from fundamentallm.version import __version__
+
+logger = get_logger(__name__)
+
+
+def _load_configs(
+    config_path: Optional[Path],
+    data_path: Path,
+    vocab_size: int,
+) -> Tuple[TrainingConfig, TransformerConfig]:
+    if config_path is None:
+        train_cfg = TrainingConfig(data_path=data_path)
+        model_cfg = TransformerConfig(
+            vocab_size=vocab_size,
+            sequence_length=train_cfg.sequence_length,
+        )
+        return train_cfg, model_cfg
+
+    raw = yaml.safe_load(config_path.read_text()) or {}
+    if isinstance(raw, dict) and ("model" in raw or "training" in raw):
+        train_payload = raw.get("training", {}) or {}
+        train_payload.setdefault("data_path", str(data_path))
+        training_config = TrainingConfig.model_validate(train_payload)
+
+        model_payload = raw.get("model", {}) or {}
+        model_payload["vocab_size"] = model_payload.get("vocab_size") or vocab_size
+        if "sequence_length" not in model_payload and training_config.sequence_length:
+            model_payload["sequence_length"] = training_config.sequence_length
+        model_config = TransformerConfig.model_validate(model_payload)
+        return training_config, model_config
+
+    training_config = TrainingConfig.from_yaml(config_path)
+    training_config.data_path = data_path
+    model_config = TransformerConfig(
+        vocab_size=vocab_size,
+        sequence_length=training_config.sequence_length,
+    )
+    return training_config, model_config
+
+
+def _apply_overrides(
+    training_config: TrainingConfig,
+    *,
+    output_dir: Optional[Path],
+    epochs: Optional[int],
+    batch_size: Optional[int],
+    learning_rate: Optional[float],
+    device: Optional[str],
+    seed: Optional[int],
+) -> None:
+    if output_dir is not None:
+        training_config.checkpoint_dir = Path(output_dir).expanduser()
+    if epochs is not None:
+        training_config.num_epochs = epochs
+    if batch_size is not None:
+        training_config.batch_size = batch_size
+    if learning_rate is not None:
+        training_config.learning_rate = learning_rate
+    if device is not None:
+        training_config.device = device
+    if seed is not None:
+        training_config.seed = seed
+
+
+def _build_scheduler(
+    training_config: TrainingConfig,
+    optimizer: torch.optim.Optimizer,
+    steps_per_epoch: Optional[int],
+) -> Optional[LearningRateScheduler]:
+    name = getattr(training_config, "scheduler", None)
+    if not name:
+        return None
+
+    total_steps = training_config.total_steps or training_config.max_steps
+    if total_steps is None and steps_per_epoch is not None:
+        total_steps = steps_per_epoch * training_config.num_epochs
+
+    min_lr = training_config.learning_rate * getattr(training_config, "min_lr_ratio", 0.0)
+
+    name = name.lower()
+    if name == "constant":
+        return ConstantLRScheduler(optimizer, lr=training_config.learning_rate)
+    if name == "linear_warmup":
+        return LinearWarmup(optimizer, warmup_steps=training_config.warmup_steps, target_lr=training_config.learning_rate)
+    if name == "cosine" and total_steps:
+        return CosineAnnealingScheduler(optimizer, total_steps=total_steps, min_lr=min_lr)
+    if name == "exponential":
+        return ExponentialDecayScheduler(optimizer, decay_rate=0.99, min_lr=min_lr)
+    return None
+
+
+@click.group()
+@click.version_option(version=__version__)
+def cli() -> None:
+    """FundamentaLLM - Minimal educational language model framework."""
+
+
+@cli.command()
+@click.argument("data_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--config", "config_path", type=click.Path(exists=True, path_type=Path), help="Path to YAML config file")
+@click.option("--output-dir", type=click.Path(path_type=Path), default=None, show_default="checkpoints", help="Directory for checkpoints")
+@click.option("--epochs", type=int, help="Number of training epochs")
+@click.option("--batch-size", type=int, help="Batch size override")
+@click.option("--learning-rate", type=float, help="Learning rate override")
+@click.option("--device", type=click.Choice(["cpu", "cuda", "mps"]), help="Device override")
+@click.option("--seed", type=int, help="Random seed override")
+@click.option("--quiet", is_flag=True, help="Reduce logging verbosity")
+def train(
+    data_path: Path,
+    config_path: Optional[Path],
+    output_dir: Path,
+    epochs: Optional[int],
+    batch_size: Optional[int],
+    learning_rate: Optional[float],
+    device: Optional[str],
+    seed: Optional[int],
+    quiet: bool,
+) -> None:
+    """Train a language model on text data."""
+
+    setup_logging(level="WARNING" if quiet else "INFO")
+    logger.info("Starting training run")
+
+    try:
+        text = data_path.read_text(encoding="utf-8")
+    except Exception as exc:  # pragma: no cover - defensive
+        raise click.ClickException(f"Failed to read data from {data_path}: {exc}") from exc
+
+    tokenizer = CharacterTokenizer()
+    tokenizer.train([text])
+    click.echo(f"Vocab size: {tokenizer.vocab_size}")
+
+    training_config, model_config = _load_configs(config_path, data_path, tokenizer.vocab_size)
+    _apply_overrides(
+        training_config,
+        output_dir=output_dir,
+        epochs=epochs,
+        batch_size=batch_size,
+        learning_rate=learning_rate,
+        device=device,
+        seed=seed,
+    )
+
+    if training_config.seed is not None:
+        set_seed(training_config.seed)
+
+    ensure_dir(training_config.checkpoint_dir)
+
+    click.echo("Creating dataloaders...")
+    train_loader, val_loader = create_dataloaders(text, tokenizer, training_config)
+
+    steps_per_epoch = len(train_loader)
+    if steps_per_epoch == 0:
+        raise click.ClickException("Training dataset is empty; adjust sequence_length or provide more data.")
+
+    model_config.vocab_size = tokenizer.vocab_size
+    if model_config.sequence_length is None:
+        model_config.sequence_length = training_config.sequence_length
+    from fundamentallm.models.transformer import Transformer
+
+    model = Transformer(model_config)
+
+    loss_fn = LanguageModelingLoss()
+    builder = OptimizerBuilder(
+        weight_decay=training_config.optimizer_weight_decay,
+        betas=(training_config.adam_beta1, training_config.adam_beta2),
+        epsilon=training_config.optimizer_eps,
+    )
+    optimizer = builder.build(training_config.optimizer, model, lr=training_config.learning_rate)
+    scheduler = _build_scheduler(training_config, optimizer, steps_per_epoch)
+
+    trainer = Trainer(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        loss_fn=loss_fn,
+        device=training_config.device,
+        config=training_config,
+    )
+
+    click.echo("Training...")
+    history = trainer.train(num_epochs=training_config.num_epochs, checkpoint_dir=training_config.checkpoint_dir)
+
+    final_metrics = history[-1] if history else {}
+    final_path = Path(training_config.checkpoint_dir) / "final_model.pt"
+    manager = trainer.checkpoint_manager
+    epoch_value = final_metrics.get("epoch", training_config.num_epochs - 1)
+    state = manager._build_state(  # type: ignore[attr-defined]
+        trainer.model,
+        trainer.optimizer,
+        trainer.scheduler,
+        final_metrics,
+        int(epoch_value),
+        trainer.global_step,
+    )
+    state["model_config"] = model_config.model_dump()
+    training_payload = training_config.model_dump()
+    for key in ("data_path", "checkpoint_dir"):
+        if key in training_payload and training_payload[key] is not None:
+            training_payload[key] = str(training_payload[key])
+    state["training_config"] = training_payload
+    torch.save(state, final_path)
+
+    model_config.save(Path(training_config.checkpoint_dir) / "model.yaml")
+    training_config.save(Path(training_config.checkpoint_dir) / "training.yaml")
+    tokenizer_path = Path(training_config.checkpoint_dir) / "tokenizer.json"
+    tokenizer.save(tokenizer_path)
+
+    click.echo(f"Saved model to {final_path}")
+    click.echo(f"Saved tokenizer to {tokenizer_path}")
+
+
+@cli.command()
+@click.argument("model_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--prompt", help="Initial prompt for generation")
+@click.option("--max-tokens", type=int, default=200, show_default=True, help="Maximum tokens to generate")
+@click.option("--temperature", type=float, default=0.8, show_default=True, help="Sampling temperature")
+@click.option("--top-k", type=int, help="Top-k sampling")
+@click.option("--top-p", type=float, help="Top-p (nucleus) sampling")
+@click.option("--interactive", is_flag=True, help="Launch interactive REPL")
+@click.option("--device", type=click.Choice(["cpu", "cuda", "mps"]), default="cuda", show_default=True, help="Device for inference")
+def generate(
+    model_path: Path,
+    prompt: Optional[str],
+    max_tokens: int,
+    temperature: float,
+    top_k: Optional[int],
+    top_p: Optional[float],
+    interactive: bool,
+    device: str,
+) -> None:
+    """Generate text from a trained model."""
+
+    setup_logging()
+
+    generator = TextGenerator.from_checkpoint(model_path, device=device)
+
+    if interactive:
+        from fundamentallm.cli.interactive import InteractiveREPL
+
+        repl = InteractiveREPL(
+            generator,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+        )
+        repl.run()
+        return
+
+    if not prompt:
+        prompt = click.prompt("Enter prompt")
+
+    click.echo(f"Generating with T={temperature}, max_tokens={max_tokens}...")
+    click.echo("-" * 80)
+    text = generator.generate(
+        prompt=prompt,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        top_k=top_k,
+        top_p=top_p,
+    )
+    click.echo(text)
+
+
+@cli.command()
+@click.argument("model_path", type=click.Path(exists=True, path_type=Path))
+@click.argument("data_path", type=click.Path(exists=True, path_type=Path))
+@click.option("--output", type=click.Path(path_type=Path), help="Save results to JSON")
+@click.option("--device", type=click.Choice(["cpu", "cuda", "mps"]), default="cuda", show_default=True, help="Device for evaluation")
+def evaluate(
+    model_path: Path,
+    data_path: Path,
+    output: Optional[Path],
+    device: str,
+) -> None:
+    """Evaluate a trained model on test data."""
+
+    setup_logging()
+
+    evaluator = ModelEvaluator.from_checkpoint(model_path, device=device)
+    text = data_path.read_text(encoding="utf-8")
+
+    config = TrainingConfig(batch_size=4, sequence_length=32, data_path=data_path)
+    _, val_loader = create_dataloaders(text, evaluator.tokenizer, config)
+
+    if len(val_loader) == 0:
+        raise click.ClickException("Evaluation dataset is empty; provide more data or reduce sequence_length.")
+
+    results = evaluator.evaluate(val_loader)
+
+    click.echo("-" * 80)
+    for key, value in results.items():
+        if isinstance(value, float):
+            click.echo(f"{key:15s}: {value:.4f}")
+    click.echo("-" * 80)
+
+    if output:
+        output_dict = {k: float(v) if isinstance(v, float) else str(v) for k, v in results.items()}
+        ensure_dir(output.parent)
+        output.write_text(json.dumps(output_dict, indent=2), encoding="utf-8")
+        click.echo(f"Results saved to {output}")
