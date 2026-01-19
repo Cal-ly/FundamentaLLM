@@ -143,21 +143,44 @@
 
 ---
 
+### Phase 7: Documentation & Polish ✅
+**Objective:** Comprehensive documentation, development workflows, CI/CD, release tooling.
+
+**Lessons Learned:**
+- **Documentation-first approach:** Writing docs *after* implementation forces clarity of API surface; doc examples catch usability issues early.
+- **Multiple doc formats serve different audiences:** Getting Started (quick tutorial) vs Training Guide (expert reference) vs Architecture (internals)—each serves a purpose.
+- **Makefile reduces friction:** Common tasks (test, format, lint) exposed via `make test` instead of long CLI commands lowers contributor barrier significantly.
+- **Pre-commit hooks enforce consistency:** Auto-formatting (black, isort) and linting (flake8) catch issues before commits; prevents CI failures and review friction.
+- **GitHub Actions matrix testing:** Testing across Python 3.9, 3.10, 3.11 and multiple OSes catches platform-specific bugs; uses GitHub cache for fast builds.
+- **CHANGELOG guidance:** Document *what changed* (features, fixes), *why* (rationale), and *how to migrate* (breaking changes); users rely on this for upgrade decisions.
+- **README with badges:** Status badges (CI, coverage, license) + quick install + usage examples + links to docs = complete project introduction.
+- **CONTRIBUTING guide scalability:** Detailed workflow, code standards, testing guidelines, and PR process enable onboarding without overhead or ambiguity.
+- **Docstring formats matter:** Google-style with Args/Returns/Examples sections is more readable than NumPy-style; consistency enables auto-documentation generation.
+- **Architecture documentation should include math:** Mathematical formulas (KaTeX) + visualizations + code examples help readers understand at multiple levels.
+- **Type annotations in docs:** Python examples with type hints demonstrate best practices and work with mypy checking.
+- **Pyproject.toml consolidation:** All tool configs (black, isort, mypy, pytest, coverage) in single file reduces config file sprawl and improves discoverability.
+
+**Lessons Identified:**
+- GitHub Actions release workflow placeholder; PyPI publishing requires secure token management (commented out for now).
+- Jupyter notebook tests not yet implemented; notebooks require nbval or papermill for CI testing.
+- Sphinx-based API documentation auto-generation not yet wired; would require docstring standardization across codebase.
+- Performance benchmarking (Training Guide) uses estimated times; actual timings vary by hardware, should be measured on CI.
+- Contributing guide could include pre-approval templates for common types of PRs (docs, tests, performance improvements).
+- Example notebooks marked "coming soon"; these would be generated from simpler Python scripts to avoid maintenance duplication.
+
+---
+
 ## Upcoming Phase Considerations
-- Phase 5: +12 passing tests (sampling, generation, evaluation, integration pipeline).
 
-### Phase 5: Generation
-- Temperature sampling prone to numerical instability at low temps; add epsilon floor.
-- Top-k/top-p require sorting large tensors; consider efficiency for large vocab.
-- Beam search complexity grows exponentially; not planned for v1 but extensible via callbacks.
-
-### Phase 6: CLI
-- Click groups for subcommands (train, generate, evaluate) keep CLI modular.
-- REPL mode requires history management and graceful interrupt handling (Ctrl+C).
-
-### Phase 7: Documentation
-- Example notebooks should include training on small Shakespeare subset (reproducible, fast).
-- API docs auto-generated from docstrings; ensure all functions have complete docstrings.
+### Phase 8+ Roadmap
+- **Subword tokenization:** BPE or SentencePiece for production efficiency; consider third-party library vs custom implementation.
+- **Fine-tuning support:** Load pre-trained model, adapt to domain; requires architecture support for selective layer freezing.
+- **Distributed training:** Multi-GPU via DDP; requires refactoring trainer to handle sharded data and synchronized gradient updates.
+- **Inference optimization:** Quantization, distillation, KV cache for faster generation; separate inference model from training.
+- **Web interface:** Gradio or Streamlit wrapper around CLI for non-technical users; could enable demo deployment.
+- **Weights & Biases integration:** Experiment tracking for hyperparameter sweeps; conditional import to avoid hard dependency.
+- **Model quantization:** INT8 or FP16 conversion for smaller model files and faster inference.
+- **Beam search:** Decoding strategy for higher quality generation; exponential complexity but enables diverse outputs.
 - Architecture diagrams (ASCII art or external) help with explanation.
 
 ---
@@ -206,4 +229,4 @@
 5. **Model checkpointing:** Load model + optimizer state; resume training mid-epoch.
 
 ---
-Last Updated: January 19, 2026 (after Phase 6 completion)
+Last Updated: January 20, 2026 (after Phase 7 completion)
