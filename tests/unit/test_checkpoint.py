@@ -16,7 +16,9 @@ def test_save_and_load_cycle(tmp_dir):
     initial_state = {k: v.clone() for k, v in model.state_dict().items()}
 
     ckpt_path = tmp_dir / "checkpoint.pt"
-    manager.save(ckpt_path, model, optimizer, scheduler=None, metrics={"val_loss": 1.0}, epoch=1, step=10)
+    manager.save(
+        ckpt_path, model, optimizer, scheduler=None, metrics={"val_loss": 1.0}, epoch=1, step=10
+    )
 
     # Modify weights then restore
     with torch.no_grad():

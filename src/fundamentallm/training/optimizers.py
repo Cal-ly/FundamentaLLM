@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable, List, Tuple
+from typing import List, Tuple
 
 import torch
 import torch.nn as nn
@@ -30,7 +30,9 @@ class OptimizerBuilder:
         self.epsilon = epsilon
         self.momentum = momentum
 
-    def build(self, optimizer_name: str, model: nn.Module, lr: float, **kwargs: object) -> Optimizer:
+    def build(
+        self, optimizer_name: str, model: nn.Module, lr: float, **kwargs: object
+    ) -> Optimizer:
         """Create an optimizer for ``model``.
 
         Args:
@@ -61,7 +63,9 @@ class OptimizerBuilder:
         if name == "sgd":
             return torch.optim.SGD(param_groups, lr=lr, momentum=momentum)
         if name == "rmsprop":
-            return torch.optim.RMSprop(param_groups, lr=lr, alpha=kwargs.pop("alpha", 0.99), eps=eps, momentum=momentum)
+            return torch.optim.RMSprop(
+                param_groups, lr=lr, alpha=kwargs.pop("alpha", 0.99), eps=eps, momentum=momentum
+            )
 
         raise ValueError(f"Unsupported optimizer: {optimizer_name}")
 

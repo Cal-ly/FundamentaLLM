@@ -14,7 +14,9 @@ class BaseModel(ABC, nn.Module):
     """Abstract base class for all FundamentaLLM models."""
 
     @abstractmethod
-    def forward(self, *args: Any, **kwargs: Any) -> torch.Tensor:  # pragma: no cover - interface only
+    def forward(
+        self, *args: Any, **kwargs: Any
+    ) -> torch.Tensor:  # pragma: no cover - interface only
         """Run the forward pass."""
 
     def count_parameters(self) -> int:

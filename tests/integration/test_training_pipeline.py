@@ -50,7 +50,11 @@ def _build_trainer(
 
     loss_fn = LanguageModelingLoss()
     optimizer = OptimizerBuilder().build("adamw", transformer, lr=config.learning_rate)
-    scheduler = LinearWarmup(optimizer, warmup_steps=2, target_lr=config.learning_rate) if use_scheduler else None
+    scheduler = (
+        LinearWarmup(optimizer, warmup_steps=2, target_lr=config.learning_rate)
+        if use_scheduler
+        else None
+    )
 
     return Trainer(
         model=transformer,
@@ -93,7 +97,9 @@ def test_checkpoint_cycle(tmp_dir, sample_text, sample_tokenizer):
     # Load into a fresh trainer and resume
     new_trainer = _build_trainer(tmp_dir, sample_text, sample_tokenizer)
     manager = new_trainer.checkpoint_manager
-    _, _, _, _, epoch, step = manager.load(ckpt_files[-1], new_trainer.model, new_trainer.optimizer, new_trainer.scheduler)
+    _, _, _, _, epoch, step = manager.load(
+        ckpt_files[-1], new_trainer.model, new_trainer.optimizer, new_trainer.scheduler
+    )
     new_trainer.global_step = step
     history = new_trainer.train(num_epochs=1, checkpoint_dir=tmp_dir)
     assert history

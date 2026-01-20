@@ -11,11 +11,11 @@ from typing import Any, Dict, Iterable, Optional
 import torch
 from torch import amp
 
+from fundamentallm.config.training import TrainingConfig
 from fundamentallm.training.callbacks import Callback, CallbackList
 from fundamentallm.training.checkpoint import CheckpointManager
 from fundamentallm.training.early_stopping import EarlyStopping
 from fundamentallm.training.metrics import MetricTracker
-from fundamentallm.config.training import TrainingConfig
 
 logger = logging.getLogger(__name__)
 
@@ -50,12 +50,16 @@ class Trainer:
         )
 
         patience = getattr(config, "early_stopping_patience", 0)
-        self.early_stopping = EarlyStopping(
-            patience=patience,
-            metric=getattr(config, "early_stopping_metric", "val_loss"),
-            mode=getattr(config, "early_stopping_mode", "min"),
-            min_delta=getattr(config, "early_stopping_min_delta", 0.0),
-        ) if patience > 0 else None
+        self.early_stopping = (
+            EarlyStopping(
+                patience=patience,
+                metric=getattr(config, "early_stopping_metric", "val_loss"),
+                mode=getattr(config, "early_stopping_mode", "min"),
+                min_delta=getattr(config, "early_stopping_min_delta", 0.0),
+            )
+            if patience > 0
+            else None
+        )
 
         self.metric_tracker = MetricTracker()
 
@@ -66,7 +70,9 @@ class Trainer:
         self.ema_loss: Optional[float] = None
         self.nan_encountered = False
 
-        mixed_precision = bool(getattr(config, "mixed_precision", False)) and self.device.type == "cuda"
+        mixed_precision = (
+            bool(getattr(config, "mixed_precision", False)) and self.device.type == "cuda"
+        )
         self.scaler = amp.GradScaler(enabled=mixed_precision)
 
         logger.info(f"Trainer initialized on device: {self.device}")
@@ -87,11 +93,11 @@ class Trainer:
 
     def _check_loss_validity(self, loss: torch.Tensor, step: int) -> bool:
         """Check if loss is valid (not NaN or Inf).
-        
+
         Args:
             loss: Loss tensor to check.
             step: Current training step (for logging).
-        
+
         Returns:
             True if loss is valid, False otherwise.
         """
@@ -114,11 +120,11 @@ class Trainer:
         with amp.autocast(device_type=self.device.type, enabled=self.scaler.is_enabled()):
             logits = self.model(inputs)
             loss = self.loss_fn(logits, targets, reduction="mean")
-        
+
         # Check for NaN/Inf early
         if not self._check_loss_validity(loss, self.global_step):
             return float("nan"), 0
-        
+
         loss = loss / self.accumulation_steps
 
         if self.scaler.is_enabled():
@@ -187,7 +193,7 @@ class Trainer:
 
         for batch in self.train_loader:
             loss_value, tokens = self._train_step(batch)
-            
+
             # Check for training failure
             if not math.isfinite(loss_value):
                 logger.error(
@@ -212,7 +218,11 @@ class Trainer:
                     f"LR: {self.optimizer.param_groups[0]['lr']:.2e}"
                 )
 
-            if self.eval_steps and self.val_loader is not None and self.global_step % self.eval_steps == 0:
+            if (
+                self.eval_steps
+                and self.val_loader is not None
+                and self.global_step % self.eval_steps == 0
+            ):
                 val_metrics = self.validate()
                 if val_metrics:
                     logger.info(
@@ -250,14 +260,16 @@ class Trainer:
         self.callbacks.on_epoch_end(self)
         return metrics
 
-    def train(self, num_epochs: Optional[int] = None, checkpoint_dir: Optional[Path | str] = None) -> list[Dict[str, float]]:
+    def train(
+        self, num_epochs: Optional[int] = None, checkpoint_dir: Optional[Path | str] = None
+    ) -> list[Dict[str, float]]:
         history: list[Dict[str, float]] = []
         checkpoint_dir = Path(checkpoint_dir or self.config.checkpoint_dir)
         self.callbacks.on_train_begin(self)
 
         epochs = num_epochs if num_epochs is not None else getattr(self.config, "num_epochs", 1)
         logger.info(f"Starting training for {epochs} epochs")
-        
+
         for epoch in range(epochs):
             epoch_metrics = self.train_epoch(epoch)
             val_metrics = self.validate()
@@ -291,7 +303,7 @@ class Trainer:
                     step=self.global_step,
                 )
                 logger.debug(f"Saved checkpoint: {last_path}")
-                
+
                 if val_metrics:
                     best_path = checkpoint_dir / "best.pt"
                     self.checkpoint_manager.save_best(
@@ -319,7 +331,10 @@ class Trainer:
                             epoch=epoch,
                             step=self.global_step,
                         )
-                        logger.info(f"New best model saved with {self.early_stopping.metric}={monitored:.6f}")
+                        logger.info(
+                            f"New best model saved with "
+                            f"{self.early_stopping.metric}={monitored:.6f}"
+                        )
                     if should_stop:
                         logger.info(f"Early stopping triggered after epoch {epoch + 1}")
                         break
@@ -327,6 +342,6 @@ class Trainer:
         logger.info(f"Training completed. Total steps: {self.global_step}")
         if self.nan_encountered:
             logger.warning("Training encountered NaN loss at some point. Check results carefully.")
-        
+
         self.callbacks.on_train_end(self)
         return history

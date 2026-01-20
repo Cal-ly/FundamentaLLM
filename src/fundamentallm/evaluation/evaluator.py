@@ -15,7 +15,9 @@ from fundamentallm.data.tokenizers.base import BaseTokenizer
 from fundamentallm.models.transformer import Transformer
 
 
-def _load_config_from_artifacts(checkpoint_path: Path, checkpoint_payload: dict) -> TransformerConfig:
+def _load_config_from_artifacts(
+    checkpoint_path: Path, checkpoint_payload: dict
+) -> TransformerConfig:
     if "config" in checkpoint_payload:
         return TransformerConfig.model_validate(checkpoint_payload["config"])
     if "model_config" in checkpoint_payload:
@@ -32,7 +34,8 @@ def _load_config_from_artifacts(checkpoint_path: Path, checkpoint_payload: dict)
             return TransformerConfig.from_yaml(candidate)
 
     raise ValueError(
-        "TransformerConfig not found in checkpoint; provide config or include it in the checkpoint payload"
+        "TransformerConfig not found in checkpoint; "
+        "provide config or include it in the checkpoint payload"
     )
 
 
@@ -41,7 +44,7 @@ def _load_tokenizer_from_artifacts(checkpoint_path: Path) -> BaseTokenizer:
     if candidate.exists():
         return CharacterTokenizer.load(candidate)
     raise FileNotFoundError(
-        f"Tokenizer artifact not found next to checkpoint at {candidate}" \
+        f"Tokenizer artifact not found next to checkpoint at {candidate}"
         "; pass a tokenizer instance explicitly"
     )
 
@@ -110,7 +113,9 @@ class ModelEvaluator:
         }
 
         if return_predictions:
-            results["predictions"] = torch.cat(predictions_list, dim=0) if predictions_list else torch.empty(0)
+            results["predictions"] = (
+                torch.cat(predictions_list, dim=0) if predictions_list else torch.empty(0)
+            )
             results["targets"] = torch.cat(targets_list, dim=0) if targets_list else torch.empty(0)
 
         return results

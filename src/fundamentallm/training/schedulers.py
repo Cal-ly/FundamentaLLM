@@ -56,7 +56,9 @@ class ConstantLRScheduler(LearningRateScheduler):
 class LinearWarmup(LearningRateScheduler):
     """Linear warmup from 0 to target LR over ``warmup_steps``."""
 
-    def __init__(self, optimizer: Optimizer, warmup_steps: int, target_lr: Optional[float] = None) -> None:
+    def __init__(
+        self, optimizer: Optimizer, warmup_steps: int, target_lr: Optional[float] = None
+    ) -> None:
         super().__init__(optimizer)
         if warmup_steps < 0:
             raise ValueError("warmup_steps must be >= 0")
@@ -91,7 +93,9 @@ class CosineAnnealingScheduler(LearningRateScheduler):
     def step(self) -> float:
         self.step_count += 1
         progress = min(self.step_count / self.total_steps, 1.0)
-        lr = self.min_lr + 0.5 * (self.initial_lr - self.min_lr) * (1 + math.cos(math.pi * progress))
+        lr = self.min_lr + 0.5 * (self.initial_lr - self.min_lr) * (
+            1 + math.cos(math.pi * progress)
+        )
         self._update_lr(lr)
         return lr
 
@@ -109,6 +113,6 @@ class ExponentialDecayScheduler(LearningRateScheduler):
 
     def step(self) -> float:
         self.step_count += 1
-        lr = max(self.min_lr, self.initial_lr * (self.decay_rate ** self.step_count))
+        lr = max(self.min_lr, self.initial_lr * (self.decay_rate**self.step_count))
         self._update_lr(lr)
         return lr

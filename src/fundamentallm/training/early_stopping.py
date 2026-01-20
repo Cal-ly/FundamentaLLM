@@ -29,7 +29,9 @@ class EarlyStopping:
 
         if mode == "min":
             self.best_value = float("inf")
-            self._is_better: Callable[[float, float], bool] = lambda current, best: current < best - self.min_delta
+            self._is_better: Callable[[float, float], bool] = (
+                lambda current, best: current < best - self.min_delta
+            )
         else:
             self.best_value = float("-inf")
             self._is_better = lambda current, best: current > best + self.min_delta

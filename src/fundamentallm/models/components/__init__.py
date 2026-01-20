@@ -1,6 +1,5 @@
 """Model components: normalization, attention, embeddings, feedforward."""
 
-from fundamentallm.models.components.normalization import LayerNorm, RMSNorm
 from fundamentallm.models.components.attention import MultiHeadAttention
 from fundamentallm.models.components.embeddings import (
     LearnedPositionalEncoding,
@@ -8,6 +7,7 @@ from fundamentallm.models.components.embeddings import (
     create_positional_encoding,
 )
 from fundamentallm.models.components.feedforward import FeedForwardNetwork
+from fundamentallm.models.components.normalization import LayerNorm, RMSNorm
 
 __all__ = [
     "LayerNorm",
@@ -18,4 +18,3 @@ __all__ = [
     "create_positional_encoding",
     "FeedForwardNetwork",
 ]
-

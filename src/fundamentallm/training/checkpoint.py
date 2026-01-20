@@ -73,7 +73,9 @@ class CheckpointManager:
         model: torch.nn.Module,
         optimizer: Optional[torch.optim.Optimizer] = None,
         scheduler: Optional[Any] = None,
-    ) -> Tuple[torch.nn.Module, Optional[torch.optim.Optimizer], Optional[Any], Dict[str, float], int, int]:
+    ) -> Tuple[
+        torch.nn.Module, Optional[torch.optim.Optimizer], Optional[Any], Dict[str, float], int, int
+    ]:
         """Restore model/optimizer/scheduler state from ``path``.
 
         Returns a tuple ``(model, optimizer, scheduler, metrics, epoch, step)``.
@@ -90,7 +92,11 @@ class CheckpointManager:
         model.load_state_dict(checkpoint["model_state"])
         if optimizer is not None and "optimizer_state" in checkpoint:
             optimizer.load_state_dict(checkpoint["optimizer_state"])
-        if scheduler is not None and "scheduler_state" in checkpoint and hasattr(scheduler, "load_state_dict"):
+        if (
+            scheduler is not None
+            and "scheduler_state" in checkpoint
+            and hasattr(scheduler, "load_state_dict")
+        ):
             scheduler.load_state_dict(checkpoint["scheduler_state"])
 
         metrics = checkpoint.get("metrics", {})

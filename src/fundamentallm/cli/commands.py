@@ -12,7 +12,11 @@ import yaml
 
 from fundamentallm.config import TransformerConfig
 from fundamentallm.config.training import TrainingConfig
-from fundamentallm.config.validation import validate_training_config, validate_model_config, warn_on_issues
+from fundamentallm.config.validation import (
+    validate_model_config,
+    validate_training_config,
+    warn_on_issues,
+)
 from fundamentallm.data.loaders import create_dataloaders
 from fundamentallm.data.tokenizers.character import CharacterTokenizer
 from fundamentallm.evaluation.evaluator import ModelEvaluator
@@ -114,7 +118,11 @@ def _build_scheduler(
     if name == "constant":
         return ConstantLRScheduler(optimizer, lr=training_config.learning_rate)
     if name == "linear_warmup":
-        return LinearWarmup(optimizer, warmup_steps=training_config.warmup_steps, target_lr=training_config.learning_rate)
+        return LinearWarmup(
+            optimizer,
+            warmup_steps=training_config.warmup_steps,
+            target_lr=training_config.learning_rate,
+        )
     if name == "cosine" and total_steps:
         return CosineAnnealingScheduler(optimizer, total_steps=total_steps, min_lr=min_lr)
     if name == "exponential":
@@ -130,8 +138,19 @@ def cli() -> None:
 
 @cli.command()
 @click.argument("data_path", type=click.Path(exists=True, path_type=Path))
-@click.option("--config", "config_path", type=click.Path(exists=True, path_type=Path), help="Path to YAML config file")
-@click.option("--output-dir", type=click.Path(path_type=Path), default=None, show_default="checkpoints", help="Directory for checkpoints")
+@click.option(
+    "--config",
+    "config_path",
+    type=click.Path(exists=True, path_type=Path),
+    help="Path to YAML config file",
+)
+@click.option(
+    "--output-dir",
+    type=click.Path(path_type=Path),
+    default=None,
+    show_default="checkpoints",
+    help="Directory for checkpoints",
+)
 @click.option("--epochs", type=int, help="Number of training epochs")
 @click.option("--batch-size", type=int, help="Batch size override")
 @click.option("--learning-rate", type=float, help="Learning rate override")
@@ -249,7 +268,9 @@ def train(
     )
 
     click.echo("Training...")
-    history = trainer.train(num_epochs=training_config.num_epochs, checkpoint_dir=training_config.checkpoint_dir)
+    history = trainer.train(
+        num_epochs=training_config.num_epochs, checkpoint_dir=training_config.checkpoint_dir
+    )
 
     final_metrics = history[-1] if history else {}
     final_path = Path(training_config.checkpoint_dir) / "final_model.pt"
@@ -283,12 +304,22 @@ def train(
 @cli.command()
 @click.argument("model_path", type=click.Path(exists=True, path_type=Path))
 @click.option("--prompt", help="Initial prompt for generation")
-@click.option("--max-tokens", type=int, default=200, show_default=True, help="Maximum tokens to generate")
-@click.option("--temperature", type=float, default=0.8, show_default=True, help="Sampling temperature")
+@click.option(
+    "--max-tokens", type=int, default=200, show_default=True, help="Maximum tokens to generate"
+)
+@click.option(
+    "--temperature", type=float, default=0.8, show_default=True, help="Sampling temperature"
+)
 @click.option("--top-k", type=int, help="Top-k sampling")
 @click.option("--top-p", type=float, help="Top-p (nucleus) sampling")
 @click.option("--interactive", is_flag=True, help="Launch interactive REPL")
-@click.option("--device", type=click.Choice(["cpu", "cuda", "mps"]), default="cuda", show_default=True, help="Device for inference")
+@click.option(
+    "--device",
+    type=click.Choice(["cpu", "cuda", "mps"]),
+    default="cuda",
+    show_default=True,
+    help="Device for inference",
+)
 def generate(
     model_path: Path,
     prompt: Optional[str],
@@ -337,7 +368,13 @@ def generate(
 @click.argument("model_path", type=click.Path(exists=True, path_type=Path))
 @click.argument("data_path", type=click.Path(exists=True, path_type=Path))
 @click.option("--output", type=click.Path(path_type=Path), help="Save results to JSON")
-@click.option("--device", type=click.Choice(["cpu", "cuda", "mps"]), default="cuda", show_default=True, help="Device for evaluation")
+@click.option(
+    "--device",
+    type=click.Choice(["cpu", "cuda", "mps"]),
+    default="cuda",
+    show_default=True,
+    help="Device for evaluation",
+)
 def evaluate(
     model_path: Path,
     data_path: Path,
@@ -355,7 +392,9 @@ def evaluate(
     _, val_loader = create_dataloaders(text, evaluator.tokenizer, config)
 
     if len(val_loader) == 0:
-        raise click.ClickException("Evaluation dataset is empty; provide more data or reduce sequence_length.")
+        raise click.ClickException(
+            "Evaluation dataset is empty; provide more data or reduce sequence_length."
+        )
 
     results = evaluator.evaluate(val_loader)
 

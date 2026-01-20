@@ -1,7 +1,7 @@
 """Tests for learning rate schedulers."""
 
-import torch
 import pytest
+import torch
 
 from fundamentallm.training.schedulers import (
     ConstantLRScheduler,

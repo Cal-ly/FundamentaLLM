@@ -17,20 +17,30 @@ class BaseTokenizer(ABC):
         """Learn tokenization from the provided corpus."""
 
     @abstractmethod
-    def encode(self, text: str, add_special_tokens: bool = False) -> List[int]:  # pragma: no cover - interface only
+    def encode(
+        self, text: str, add_special_tokens: bool = False
+    ) -> List[int]:  # pragma: no cover - interface only
         """Convert a string to token ids."""
 
     @abstractmethod
-    def decode(self, tokens: List[int], skip_special_tokens: bool = True) -> str:  # pragma: no cover - interface only
+    def decode(
+        self, tokens: List[int], skip_special_tokens: bool = True
+    ) -> str:  # pragma: no cover - interface only
         """Convert token ids back to text."""
 
-    def batch_encode(self, texts: Iterable[str], add_special_tokens: bool = False) -> List[List[int]]:
+    def batch_encode(
+        self, texts: Iterable[str], add_special_tokens: bool = False
+    ) -> List[List[int]]:
         """Encode multiple texts in a single call."""
         return [self.encode(text, add_special_tokens=add_special_tokens) for text in texts]
 
-    def batch_decode(self, sequences: Iterable[Iterable[int]], skip_special_tokens: bool = True) -> List[str]:
+    def batch_decode(
+        self, sequences: Iterable[Iterable[int]], skip_special_tokens: bool = True
+    ) -> List[str]:
         """Decode multiple token sequences in a single call."""
-        return [self.decode(list(seq), skip_special_tokens=skip_special_tokens) for seq in sequences]
+        return [
+            self.decode(list(seq), skip_special_tokens=skip_special_tokens) for seq in sequences
+        ]
 
     @abstractmethod
     def save(self, path: Path) -> None:  # pragma: no cover - interface only

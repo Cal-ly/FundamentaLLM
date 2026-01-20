@@ -94,7 +94,9 @@ class TrainingConfig(BaseConfig):
             if self.max_steps is not None:
                 object.__setattr__(self, "total_steps", self.max_steps)
             elif self.train_steps_per_epoch is not None:
-                object.__setattr__(self, "total_steps", self.train_steps_per_epoch * self.num_epochs)
+                object.__setattr__(
+                    self, "total_steps", self.train_steps_per_epoch * self.num_epochs
+                )
         if self.total_steps is not None and self.total_steps <= 0:
             raise ValueError("total_steps must be positive")
         if self.accumulation_steps <= 0:

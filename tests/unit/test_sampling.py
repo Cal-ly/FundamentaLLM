@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import torch
 import pytest
+import torch
 
 from fundamentallm.generation.sampling import (
     GreedySampler,

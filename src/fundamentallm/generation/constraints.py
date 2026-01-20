@@ -17,7 +17,9 @@ class StopSequenceConstraint:
         if not cleaned:
             raise ValueError("stop_sequences must contain at least one non-empty string")
         self.stop_sequences = list(cleaned)
-        self._encoded: List[Tuple[int, ...]] = [tuple(tokenizer.encode(seq)) for seq in self.stop_sequences]
+        self._encoded: List[Tuple[int, ...]] = [
+            tuple(tokenizer.encode(seq)) for seq in self.stop_sequences
+        ]
 
     def is_met(self, tokens: Iterable[int] | torch.Tensor) -> Tuple[bool, str | None]:
         """Return True when the generated tokens end with a stop sequence."""

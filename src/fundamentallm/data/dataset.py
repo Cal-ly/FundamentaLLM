@@ -11,7 +11,9 @@ from torch.utils.data import Dataset
 class LanguageModelDataset(Dataset[Tuple[torch.Tensor, torch.Tensor]]):
     """Create (input, target) pairs for autoregressive language modeling."""
 
-    def __init__(self, token_ids: torch.Tensor, sequence_length: int, stride: Optional[int] = None) -> None:
+    def __init__(
+        self, token_ids: torch.Tensor, sequence_length: int, stride: Optional[int] = None
+    ) -> None:
         if token_ids.dim() != 1:
             raise ValueError("token_ids must be a 1D tensor")
         if sequence_length <= 0:

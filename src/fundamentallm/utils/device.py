@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 import torch
 
@@ -22,13 +21,13 @@ def get_available_devices() -> list[str]:
 
 def get_device(device_str: str) -> torch.device:
     """Return the torch device for the provided string.
-    
+
     Args:
         device_str: Device identifier ("cpu", "cuda", "mps", or "auto").
-    
+
     Returns:
         A torch.device instance.
-    
+
     Raises:
         ValueError: If device is requested but not available (except "auto").
     """
@@ -36,15 +35,15 @@ def get_device(device_str: str) -> torch.device:
         best_device = get_best_device()
         logger.info(f"Auto-selected device: {best_device}")
         return torch.device(best_device)
-    
+
     return torch.device(device_str)
 
 
 def get_best_device() -> str:
     """Get the best available device with intelligent fallback.
-    
+
     Priority order: cuda > mps > cpu
-    
+
     Returns:
         Device name as string.
     """
@@ -55,21 +54,21 @@ def get_best_device() -> str:
 
 def validate_device(device_str: str) -> str:
     """Validate and potentially fallback a device choice.
-    
+
     Args:
         device_str: Requested device identifier.
-    
+
     Returns:
         Validated device identifier (possibly different from input).
-    
+
     Warns:
         If requested device is unavailable and fallback is used.
     """
     if device_str == "auto":
         return get_best_device()
-    
+
     available = get_available_devices()
-    
+
     # Special handling for cuda to check for specific issues
     if device_str == "cuda" and "cuda" in available:
         try:
@@ -80,12 +79,11 @@ def validate_device(device_str: str) -> str:
             _ = torch.zeros(1, device="cuda")
         except (RuntimeError, Exception) as e:
             logger.warning(
-                f"CUDA requested but unavailable or misconfigured: {e}. "
-                f"Falling back to CPU."
+                f"CUDA requested but unavailable or misconfigured: {e}. " f"Falling back to CPU."
             )
             return "cpu"
         return device_str
-    
+
     if device_str not in available:
         fallback = available[-1]
         logger.warning(
@@ -94,13 +92,13 @@ def validate_device(device_str: str) -> str:
             f"Using '{fallback}'."
         )
         return fallback
-    
+
     return device_str
 
 
 def get_device_info() -> dict[str, bool]:
     """Get information about available devices.
-    
+
     Returns:
         Dictionary with device availability information.
     """
