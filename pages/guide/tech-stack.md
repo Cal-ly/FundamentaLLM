@@ -102,7 +102,7 @@ The framework is organized in layers:
        Built on PyTorch
 ```
 
-## Why Not...?
+<!-- ## Why Not...?
 
 ### TensorFlow?
 - Steeper learning curve
@@ -132,7 +132,7 @@ Every dependency is chosen because:
 3. **Minimal** - We avoid dependency bloat
 4. **Educational** - Teaches best practices
 
-No unnecessary dependencies = cleaner, easier to understand codebase.
+No unnecessary dependencies = cleaner, easier to understand codebase. -->
 
 ## Next Steps
 
