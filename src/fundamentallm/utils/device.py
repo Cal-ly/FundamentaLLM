@@ -96,7 +96,7 @@ def validate_device(device_str: str) -> str:
     return device_str
 
 
-def get_device_info() -> dict[str, bool]:
+def get_device_info() -> dict[str, bool | int]:
     """Get information about available devices.
 
     Returns:

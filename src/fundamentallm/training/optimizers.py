@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import torch
 import torch.nn as nn
@@ -30,9 +30,7 @@ class OptimizerBuilder:
         self.epsilon = epsilon
         self.momentum = momentum
 
-    def build(
-        self, optimizer_name: str, model: nn.Module, lr: float, **kwargs: object
-    ) -> Optimizer:
+    def build(self, optimizer_name: str, model: nn.Module, lr: float, **kwargs: Any) -> Optimizer:
         """Create an optimizer for ``model``.
 
         Args:

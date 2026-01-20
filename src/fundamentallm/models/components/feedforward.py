@@ -61,6 +61,7 @@ class FeedForwardNetwork(nn.Module):
         self.linear1 = nn.Linear(d_model, d_ff)
 
         # Activation function
+        self.activation: nn.GELU | nn.ReLU
         if activation.lower() == "gelu":
             self.activation = nn.GELU()
         elif activation.lower() == "relu":

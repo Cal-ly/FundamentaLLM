@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
-def validate_training_config(config: Dict[str, Any]) -> list[str]:
+def validate_training_config(config: dict[str, Any] | Any) -> list[str]:
     """Validate training configuration and return list of issues.
 
     Args:
-        config: TrainingConfig dictionary or object.
+        config: TrainingConfig dictionary or Pydantic object.
 
     Returns:
         List of validation issues (empty if all valid).
@@ -86,11 +86,11 @@ def validate_training_config(config: Dict[str, Any]) -> list[str]:
     return issues
 
 
-def validate_model_config(config: Dict[str, Any]) -> list[str]:
+def validate_model_config(config: dict[str, Any] | Any) -> list[str]:
     """Validate model configuration.
 
     Args:
-        config: TransformerConfig dictionary or object.
+        config: TransformerConfig dictionary or Pydantic object.
 
     Returns:
         List of validation issues (empty if all valid).

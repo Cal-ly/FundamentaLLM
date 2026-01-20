@@ -25,7 +25,7 @@ def _apply_env_overrides(data: Dict[str, Any], prefix: str) -> None:
         for key in keys[:-1]:
             if key not in cursor or not isinstance(cursor[key], dict):
                 cursor[key] = {}
-            cursor = cursor[key]  # type: ignore[assignment]
+            cursor = cursor[key]
         cursor[keys[-1]] = yaml.safe_load(raw_value)
 
 

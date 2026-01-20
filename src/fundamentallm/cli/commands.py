@@ -276,7 +276,7 @@ def train(
     final_path = Path(training_config.checkpoint_dir) / "final_model.pt"
     manager = trainer.checkpoint_manager
     epoch_value = final_metrics.get("epoch", training_config.num_epochs - 1)
-    state = manager._build_state(  # type: ignore[attr-defined]
+    state = manager._build_state(
         trainer.model,
         trainer.optimizer,
         trainer.scheduler,

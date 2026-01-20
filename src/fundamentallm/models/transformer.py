@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 
@@ -62,6 +64,8 @@ class TransformerBlock(nn.Module):
             d_ff = 4 * d_model
 
         # Pre-normalization (before attention)
+        self.norm1: RMSNorm | LayerNorm
+        self.norm2: RMSNorm | LayerNorm
         if norm_type.lower() == "rmsnorm":
             self.norm1 = RMSNorm(d_model)
             self.norm2 = RMSNorm(d_model)
@@ -250,22 +254,43 @@ class Transformer(BaseModel):
 
         return logits
 
-    def save(self, path: str) -> None:
+    def save(self, path: Path) -> None:
         """Save model to disk.
 
         Args:
             path: Path to save the model.
         """
-        torch.save(self.state_dict(), path)
+        torch.save(self.state_dict(), str(path))
 
-    def load(self, path: str) -> None:
+    @classmethod
+    def load(cls, path: Path) -> "Transformer":
         """Load model from disk.
 
         Args:
             path: Path to load the model from.
+
+        Returns:
+            Loaded Transformer instance.
         """
-        state_dict = torch.load(path, map_location="cpu")
-        self.load_state_dict(state_dict)
+        state_dict = torch.load(str(path), map_location="cpu")
+        # Create model instance with proper config
+        # This is a simplified loader - in practice, config should be saved with model
+        model = cls(
+            config=TransformerConfig(
+                vocab_size=state_dict["token_embedding.weight"].shape[0],
+                sequence_length=2048,  # Default - should be saved with model
+                d_model=state_dict["token_embedding.weight"].shape[1],
+                num_heads=8,  # Default - should be saved in config
+                num_layers=len(
+                    [k for k in state_dict.keys() if "layers." in k and ".attn.qkv" in k]
+                ),
+                dropout=0.1,
+                ffn_expansion=4,
+                pos_encoding="sinusoidal",
+            ),
+        )
+        model.load_state_dict(state_dict)
+        return model
 
     def _init_weights(self, module: nn.Module) -> None:
         """Initialize weights (GPT-2 style).

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Tuple, Union
+from typing import Literal, Tuple, Union, overload
 
 import torch
 from torch.utils.data import DataLoader
@@ -10,6 +10,24 @@ from torch.utils.data import DataLoader
 from fundamentallm.config.training import TrainingConfig
 from fundamentallm.data.dataset import LanguageModelDataset
 from fundamentallm.data.tokenizers.base import BaseTokenizer
+
+
+@overload
+def create_dataloaders(
+    text: str,
+    tokenizer: BaseTokenizer,
+    config: TrainingConfig,
+    return_tokenizer: Literal[False] = False,
+) -> Tuple[DataLoader, DataLoader]: ...
+
+
+@overload
+def create_dataloaders(
+    text: str,
+    tokenizer: BaseTokenizer,
+    config: TrainingConfig,
+    return_tokenizer: Literal[True],
+) -> Tuple[DataLoader, DataLoader, BaseTokenizer]: ...
 
 
 def create_dataloaders(

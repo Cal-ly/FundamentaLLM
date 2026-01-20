@@ -51,6 +51,7 @@ def setup_logging(
     root_logger.setLevel(getattr(logging, level.upper(), logging.INFO))
 
     # Create formatters
+    formatter: logging.Formatter
     if json_format:
         formatter = JSONFormatter()
     else:

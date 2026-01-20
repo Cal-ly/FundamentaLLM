@@ -127,6 +127,9 @@ class SinusoidalPositionalEncoding(nn.Module):
         # Register as buffer so it moves with the model but doesn't get trained
         pe = torch.zeros(max_seq_len, d_model)
 
+        # Type annotation for registered buffer
+        self.pe: torch.Tensor
+
         # Position indices [0, 1, 2, ...]
         position = torch.arange(0, max_seq_len, dtype=torch.float).unsqueeze(1)
 
