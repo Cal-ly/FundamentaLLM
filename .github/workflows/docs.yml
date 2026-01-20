@@ -42,10 +42,19 @@ jobs:
         working-directory: pages
         run: npm run docs:build
 
+      - name: Debug - List build output
+        run: |
+          echo "Listing pages directory:"
+          ls -la pages/
+          echo "Listing pages/.vitepress directory:"
+          ls -la pages/. vitepress/ || echo "No .vitepress directory found"
+          echo "Listing pages/.vitepress/dist directory:"
+          ls -la pages/.vitepress/dist/ || echo "No dist directory found"
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
-        with:
-          path: pages/. vitepress/dist
+        with: 
+          path: pages/.vitepress/dist
 
   deploy: 
     environment: 
@@ -56,4 +65,4 @@ jobs:
     steps: 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4  # Updated to v4
+        uses: actions/deploy-pages@v4
