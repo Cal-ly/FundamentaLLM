@@ -12,6 +12,7 @@ import yaml
 
 from fundamentallm.config import TransformerConfig
 from fundamentallm.config.training import TrainingConfig
+from fundamentallm.config.validation import validate_training_config, validate_model_config, warn_on_issues
 from fundamentallm.data.loaders import create_dataloaders
 from fundamentallm.data.tokenizers.character import CharacterTokenizer
 from fundamentallm.evaluation.evaluator import ModelEvaluator
@@ -26,6 +27,7 @@ from fundamentallm.training.schedulers import (
     LinearWarmup,
 )
 from fundamentallm.training.trainer import Trainer
+from fundamentallm.utils.device import validate_device
 from fundamentallm.utils.logging import get_logger, setup_logging
 from fundamentallm.utils.paths import ensure_dir
 from fundamentallm.utils.random import set_seed
@@ -152,10 +154,23 @@ def train(
     setup_logging(level="WARNING" if quiet else "INFO")
     logger.info("Starting training run")
 
+    # Load and validate data
     try:
         text = data_path.read_text(encoding="utf-8")
-    except Exception as exc:  # pragma: no cover - defensive
-        raise click.ClickException(f"Failed to read data from {data_path}: {exc}") from exc
+    except FileNotFoundError as exc:
+        logger.error(f"Data file not found: {data_path}")
+        raise click.ClickException(f"Data file not found: {data_path}") from exc
+    except UnicodeDecodeError as exc:
+        logger.error(f"Encoding error reading {data_path}: {exc}")
+        raise click.ClickException(
+            f"File encoding error at {data_path}. Data must be UTF-8 encoded."
+        ) from exc
+    except Exception as exc:
+        logger.exception(f"Unexpected error reading data from {data_path}")
+        raise click.ClickException(f"Failed to read data: {exc}") from exc
+
+    if not text or len(text.strip()) == 0:
+        raise click.ClickException("Data file is empty; provide non-empty text data.")
 
     tokenizer = CharacterTokenizer()
     tokenizer.train([text])
@@ -172,6 +187,23 @@ def train(
         seed=seed,
     )
 
+    # Validate device and apply fallback if needed
+    validated_device = validate_device(training_config.device)
+    if validated_device != training_config.device:
+        training_config.device = validated_device
+        click.echo(f"Device updated to: {validated_device}")
+
+    # Validate configurations
+    training_issues = validate_training_config(training_config)
+    warn_on_issues(training_issues, "TrainingConfig")
+
+    model_config.vocab_size = tokenizer.vocab_size
+    if model_config.sequence_length is None:
+        model_config.sequence_length = training_config.sequence_length
+
+    model_issues = validate_model_config(model_config)
+    warn_on_issues(model_issues, "TransformerConfig")
+
     if training_config.seed is not None:
         set_seed(training_config.seed)
 
@@ -182,14 +214,19 @@ def train(
 
     steps_per_epoch = len(train_loader)
     if steps_per_epoch == 0:
-        raise click.ClickException("Training dataset is empty; adjust sequence_length or provide more data.")
+        raise click.ClickException(
+            "Training dataset is empty. Adjust sequence_length or provide more data. "
+            f"(got {len(text)} characters, sequence_length={training_config.sequence_length})"
+        )
 
-    model_config.vocab_size = tokenizer.vocab_size
-    if model_config.sequence_length is None:
-        model_config.sequence_length = training_config.sequence_length
     from fundamentallm.models.transformer import Transformer
 
-    model = Transformer(model_config)
+    try:
+        model = Transformer(model_config)
+        logger.info(f"Model created with {model.count_parameters():,} parameters")
+    except Exception as exc:
+        logger.error(f"Failed to create model with config: {exc}")
+        raise click.ClickException(f"Model creation failed: {exc}") from exc
 
     loss_fn = LanguageModelingLoss()
     builder = OptimizerBuilder(
