@@ -1,6 +1,6 @@
 name: Deploy Docs
 
-on:
+on: 
   push:
     branches: [main, develop]
     paths:
@@ -14,8 +14,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: pages-${{ github.ref }}  # Changed to prevent conflicts across branches
+  cancel-in-progress:  false
 
 jobs:
   build:
@@ -24,14 +24,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5  # Added this action
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: pages/package-lock.json  # Added caching
 
       - name: Install dependencies
         working-directory: pages
-        run: npm ci
+        run:  npm ci
 
       - name: Build documentation
         working-directory: pages
@@ -40,15 +45,15 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: pages/.vitepress/dist
+          path: pages/. vitepress/dist
 
-  deploy:
-    environment:
+  deploy: 
+    environment: 
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
-    runs-on: ubuntu-latest
-    steps:
+    runs-on:  ubuntu-latest
+    steps: 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@v4  # Updated to v4
