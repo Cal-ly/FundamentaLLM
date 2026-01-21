@@ -236,13 +236,67 @@ System automatically handles boundaries.
 
 ### Why Split?
 
-**Training set:** Learn patterns  
-**Validation set:** Measure generalization
+**The core principle:** You can't trust a model's performance on data it's seen before!
+
+**Analogy:** If you study using only practice problems, then take an exam with the same problems, your score doesn't tell you if you actually learned the material. It just tells you that you memorized those specific problems.
+
+**Training set:** The practice problems the model learns from
+- **Purpose:** Update model weights to minimize loss
+- **Used during:** Every training step
+- **Size:** Typically 80-90% of data
+
+**Validation set:** New problems to test understanding
+- **Purpose:** Measure how well the model generalizes to unseen data
+- **Used during:** After each epoch to check progress
+- **Size:** Typically 10-20% of data
+
+**Why validation loss matters:**
+```
+Good model: train_loss = 1.5, val_loss = 1.6
+  → Similar losses mean good generalization ✅
+
+Bad model:  train_loss = 0.8, val_loss = 2.5
+  → Huge gap means memorizing training data ❌
+```
+
+### The Default Split (80/20)
+
+FundamentaLLM uses **80% training / 20% validation** by default:
+
+```bash
+# Default: 80% train, 20% validation  
+fundamentallm train data.txt
+
+# Or explicitly set:
+fundamentallm train data.txt --val-split 0.2
+```
+
+**Why 80/20?**
+- Standard practice in machine learning
+- 80% provides enough training signal
+- 20% provides reliable validation metrics
+
+### Adjusting the Split
+
+**For small datasets** (< 1 MB):
+```bash
+# Use 90/10 to maximize training data
+fundamentallm train data.txt --val-split 0.1
+```
+
+**For large datasets** (> 100 MB):
+```bash
+# Can afford more validation data for better evaluation
+fundamentallm train data.txt --val-split 0.3
+```
 
 ### Automatic Split
 
 ```bash
-# 90% train, 10% validation (default)
+# 80% train, 20% validation (default)
+fundamentallm train data.txt
+
+# Or customize split
 fundamentallm train data.txt --val-split 0.1
 ```
 

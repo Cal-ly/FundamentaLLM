@@ -2,6 +2,51 @@
 
 Solutions to common problems when training and using language models.
 
+## Parameter Validation Reference
+
+FundamentaLLM validates parameters before training to catch issues early. Here are the limits and constraints:
+
+### Hard Limits (Will Block Training)
+
+| Parameter | Constraint | Example |
+|-----------|-----------|---------|
+| `--model-dim` | Must be ≥ 64 | `--model-dim 128` ✅ |
+| `--num-layers` | Must be < 48 | `--num-layers 24` ✅ |
+| `--num-heads` | Must divide `model_dim` | `--num-heads 8` with `model-dim 256` ✅ |
+| `--num-heads` | `model_dim / num_heads` ≥ 8 | `model_dim=512, num_heads=8` (64 per head) ✅ |
+| `--dropout` | Must be in [0.0, 1.0] | `--dropout 0.1` ✅ |
+| `--val-split` | Must be in (0, 1) | `--val-split 0.2` ✅ |
+
+### Warning Thresholds (Will Log But Allow)
+
+| Parameter | Warn If | Recommended |
+|-----------|---------|-------------|
+| `--learning-rate` | > 0.1 or < 1e-6 | 1e-4 to 1e-3 |
+| `--batch-size` | > 2048 | 8-128 |
+| `--max-seq-len` | > 8192 | 128-2048 |
+| `--epochs` | > 10000 | 5-100 |
+| `--gradient-clip` | > 10 | 1.0-5.0 |
+| `--model-dim` | < 64 | ≥ 64 |
+
+### Auto-Fix Behavior
+
+With `--auto-fix-config` (enabled by default), FundamentaLLM automatically fixes validation conflicts:
+
+**Example: num_heads too high**
+```bash
+# You request:
+--model-dim 512 --num-heads 16
+
+# System detects: 512/16 = 32 per head (too small, need ≥8 for safety)
+# Auto-fixes to: num_heads = 8 (512/8 = 64 per head)
+# Logs: "WARNING: num_heads 16 → 8 (head_dim = 64)"
+```
+
+**To disable auto-fix:**
+```bash
+--auto-fix-config false
+```
+
 ## Quick Diagnostics
 
 ```bash
@@ -698,11 +743,50 @@ torch.cuda.empty_cache()
 
 ### "ValueError: num_heads must divide d_model"
 
-**Fix:**
+**What it means:** The number of attention heads must divide evenly into the model dimension.
+
+**Why it matters:** Each attention head processes a portion of `d_model`. If they don't divide evenly, heads get different dimensions, breaking the architecture.
+
+**Example problems:**
 ```bash
-# Make sure model_dim divisible by num_heads
---model-dim 256 --num-heads 8  # 256/8 = 32 ✓
-# Not: --model-dim 200 --num-heads 8  # 200/8 = 25 ✗
+# ❌ Bad: 200 / 8 = 25 (uneven, causes error)
+--model-dim 200 --num-heads 8
+
+# ✅ Good: 256 / 8 = 32 (each head gets 32 dimensions)
+--model-dim 256 --num-heads 8
+
+# ✅ Good: 512 / 4 = 128 (each head gets 128 dimensions)
+--model-dim 512 --num-heads 4
+```
+
+**Auto-fix behavior:** With `--auto-fix-config` (default), FundamentaLLM automatically fixes this:
+```bash
+# This gets auto-corrected to num_heads=8
+fundamentallm train data.txt \ \
+    --model-dim 512 \ \
+    --num-heads 16  # Too high! Would cause head_dim < 8
+
+# Logs:
+# WARNING: num_heads (16) too high relative to d_model (512)
+# Auto-fixing: num_heads 16 → 8 (head_dim = 512/8 = 64)
+```
+
+**Valid divisors by model dimension:**
+```bash
+model-dim 128:  num_heads can be: 1, 2, 4, 8
+model-dim 256:  num_heads can be: 1, 2, 4, 8, 16
+model-dim 512:  num_heads can be: 1, 2, 4, 8, 16
+model-dim 1024: num_heads can be: 1, 2, 4, 8, 16
+```
+
+**Rule of thumb:** Head dimension should be ≥ 8
+```
+head_dimension = model_dim / num_heads
+
+Good:  512 / 8 = 64   ✅
+Good:  256 / 4 = 64   ✅
+Bad:   128 / 32 = 4   ❌ (head_dim too small)
+Bad:   200 / 8 = 25   ❌ (doesn't divide evenly)
 ```
 
 ### "RuntimeError: The size of tensor a (X) must match the size of tensor b (Y)"

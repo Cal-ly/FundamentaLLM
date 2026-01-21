@@ -119,10 +119,10 @@ def validate_model_config(config: dict[str, Any] | Any) -> list[str]:
         issues.append(f"num_heads must be >= 1, got {num_heads}")
     if d_model % num_heads != 0:
         issues.append(f"d_model ({d_model}) must be divisible by num_heads ({num_heads})")
-    if num_heads > d_model // 64:
+    if num_heads > d_model // 8:
         issues.append(
             f"num_heads ({num_heads}) too high relative to d_model ({d_model}), "
-            f"d_model//num_heads would be < 64"
+            f"d_model//num_heads would be < 8"
         )
 
     # Validate num_layers

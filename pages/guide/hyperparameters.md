@@ -13,43 +13,60 @@ Unlike model parameters (weights), hyperparameters are not learned from data.
 
 ## Quick Reference
 
-| Category | Parameter | Typical Range | Default |
-|----------|-----------|---------------|---------|
-| **Model** | `--model-dim` | 64-1024 | 128 |
-| | `--num-layers` | 2-24 | 6 |
-| | `--num-heads` | 2-16 | 8 |
-| | `--dropout` | 0.0-0.3 | 0.1 |
-| **Training** | `--learning-rate` | 1e-5 to 1e-2 | 1e-3 |
-| | `--batch-size` | 8-128 | 32 |
-| | `--epochs` | 5-100 | 20 |
-| **Sequence** | `--max-seq-len` | 128-2048 | 256 |
+| Category | Parameter | Safe Range | Default | Notes |
+|----------|-----------|-----------|---------|-------|
+| **Model** | `--model-dim` | 64-1024 | 128 | Min: 64 (prevents underfitting) |
+| | `--num-layers` | 2-48 | 6 | Max: 48 (hard limit) |
+| | `--num-heads` | 1-16 | 8 | Must divide `model_dim`, keep head_dim ≥ 8 |
+| | `--dropout` | 0.0-1.0 | 0.1 | - |
+| **Training** | `--learning-rate` | 1e-6 to 0.1 | 1e-3 | Recommend: 1e-4 to 1e-3 |
+| | `--batch-size` | 1-2048 | 16 | Warn if > 2048 |
+| | `--epochs` | 1-10000 | 10 | Warn if > 10000 |
+| | `--gradient-clip` | > 0 | 1.0 | Warn if > 10 |
+| **Sequence** | `--max-seq-len` | 1-8192+ | 256 | Warn if > 8192 (OOM risk) |
+| | `--val-split` | (0, 1) | 0.2 | 20% validation by default |
 
 ## Model Architecture
 
 ### Hidden Dimension (`--model-dim`)
 
-**What it controls:** Size of embedding and hidden layers.
+**What it controls:** The "width" or capacity of your model - how much information it can process at each layer.
 
-**Effect:**
-- Larger → More capacity, better performance, slower training
-- Smaller → Faster, less memory, may underfit
+**Analogy:** Think of `model_dim` as the number of independent "specialists" in a team:
+- More specialists → Can tackle more complex problems, takes more time & resources
+- Fewer specialists → Faster, cheaper, but may miss nuanced details
+
+**Effect on training:**
+- **Larger** (256-512) → More expressive, better performance, slower training, more memory
+- **Medium** (64-128) → Good balance for most datasets (default)
+- **Smaller** (32-64) → Fast training, less memory, but may underfit complex data
+
+**Effect on final model:**
+- Larger models capture more nuanced patterns but risk overfitting on small datasets
+- Smaller models train faster and use less memory but may struggle with complex relationships
 
 **How to tune:**
 ```bash
-# Start with default
---model-dim 128
-
-# If underfitting (high train and val loss)
---model-dim 256
-
-# If overfitting (low train loss, high val loss)
+# For quick experiments or CPU training (fast, low memory)
 --model-dim 64
 
-# For production
+# Default - good starting point for most datasets
+--model-dim 128
+
+# If model is underfitting (both train and val loss high)
+--model-dim 256
+
+# For complex data or larger datasets (requires GPU)
 --model-dim 512
 ```
 
-**Rule of thumb:** Double until you hit memory limits or overfitting.
+**Rule of thumb:** 
+1. Start with default (128)
+2. If training is slow or you run out of memory, reduce to 64
+3. If loss isn't decreasing well, increase to 256
+4. Double incrementally until you hit memory limits
+
+**Important:** `model_dim` must be ≥ 64 to ensure sufficient model capacity.
 
 ### Number of Layers (`--num-layers`)
 
@@ -126,84 +143,112 @@ Unlike model parameters (weights), hyperparameters are not learned from data.
 
 ### Learning Rate (`--learning-rate`)
 
-**Most important hyperparameter!**
+**The most important hyperparameter!** It controls how fast your model learns.
 
-**Effect:**
-- Too high → Loss explodes or NaN
-- Too low → Training is slow or stuck
-- Just right → Smooth, steady decrease
+**Analogy:** Think of learning rate as the step size when walking downhill:
+- Too large → You overshoot and go uphill (loss explodes)
+- Too small → Very slow progress (training stalls)
+- Just right → Steady descent toward good solutions
+
+**Effect on training:**
+- **Too high** (> 0.1) → Loss explodes or becomes NaN (unstable)
+- **High** (0.01-0.1) → May overshoot good solutions  
+- **Moderate** (0.001-0.01) → Standard, works for most cases ✅
+- **Low** (0.0001-0.001) → Stable but slow training
+- **Too low** (< 1e-6) → Barely learns, wastes time
+
+**Recommended range:** 1e-4 to 1e-3 (most datasets work well here)
 
 **How to tune:**
 ```bash
-# Start high, reduce if unstable
---learning-rate 0.01  → Try first
+# Safe default - works for most cases
+--learning-rate 0.001  # This is 1e-3
 
-# If loss explodes
---learning-rate 0.001  → Standard
+# If loss explodes (NaN or spikes)
+--learning-rate 0.0001  # Try 10x smaller
 
-# If training is slow
---learning-rate 0.0001 → Conservative
+# If training doesn't improve
+--learning-rate 0.0001  # Be more conservative
 
-# If still slow
---learning-rate 0.00001 → Very conservative
+# Only if everything else works and training is too slow
+--learning-rate 0.0005  # Split the difference
 ```
 
-**Strategy:** Start at 1e-3, multiply by 10 or divide by 10 based on results.
+**Warning signs:**
+- Loss becomes NaN → Learning rate too high, reduce 10x
+- Loss doesn't decrease in first 5% of training → Learning rate too low, increase 10x
+- Loss decreases very slowly → Learning rate too conservative, increase 2-5x
 
-**Learning rate scheduling:**
-```bash
-# Warmup then decay
---lr-schedule cosine --warmup-steps 1000
-
-# Step decay
---lr-schedule step --lr-decay 0.1 --lr-steps 10000,20000
-```
+**Strategy:** Start at 1e-3, then:
+1. If loss explodes → divide by 10
+2. If loss doesn't decrease → divide by 2
+3. Once stable, let it train fully
+4. If final loss is high, try 1.5-2x larger for next run
 
 ### Batch Size (`--batch-size`)
 
-**What it controls:** Number of samples processed together.
+**What it controls:** How many samples your model processes together before updating weights.
 
-**Effect:**
-- Larger → More stable gradients, faster on GPU, more memory
-- Smaller → Noisier gradients, less memory
+**Analogy:** Like a teacher collecting assignments:
+- Small batches (8-16) → Give feedback after each student (noisy but frequent updates)
+- Medium batches (32-64) → Collect a few before analyzing (balanced)
+- Large batches (128+) → Collect many for statistical confidence (stable but less frequent updates)
+
+**Effect on training:**
+- **Larger** (64-128) → Stable training, better GPU utilization, uses more memory
+- **Medium** (16-32) → Good balance, works for most cases ✅
+- **Smaller** (4-16) → Noisier updates, slower, but uses less memory
+
+**Memory impact:** Doubling batch size roughly doubles memory usage.
 
 **How to tune:**
 ```bash
-# Memory constrained
---batch-size 8-16
+# Memory constrained (CPU or old GPU)
+--batch-size 8
 
-# Balanced
+# Balanced (most cases)
+--batch-size 16
+
+# Large GPU with plenty of VRAM
 --batch-size 32
 
 # High-end GPU
---batch-size 64-128
+--batch-size 64
 ```
 
-**Rule:** Increase until you hit memory limit, then back off 20-30%.
-
-**Trade-off:**
-```
-Small batch (8):  Noisy but more updates per epoch
-Large batch (64): Stable but fewer updates per epoch
-```
+**Safe range:** 1-2048 (warn if exceeding 2048)
 
 ### Number of Epochs (`--epochs`)
 
-**What it controls:** Complete passes through dataset.
+**What it controls:** Complete passes through the entire dataset.
+
+**Analogy:** Like studying for an exam:
+- Few epochs (2-5) → Quick review, may forget details
+- Medium epochs (10-20) → Thorough studying, good comprehension ✅
+- Many epochs (50+) → Over-studying, may memorize instead of understanding (overfitting)
 
 **Effect:**
-- More epochs → Better training, risk overfitting
-- Fewer epochs → Faster, may not converge
+- **More epochs** → Better learning, but risk of overfitting on training data
+- **Fewer epochs** → Faster training, but may not fully learn patterns
+
+**Overfitting indicators:**
+- Training loss keeps decreasing but validation loss increases
+- Sign the model is memorizing training data instead of generalizing
+- Consider using early stopping when validation loss starts increasing
 
 **How to tune:**
 ```bash
 # Quick test
 --epochs 5
 
-# Standard
---epochs 20-30
+# Standard for most datasets
+--epochs 10-20
 
-# Large dataset
+# Complex data or larger datasets
+--epochs 20-50
+```
+
+**Safe range:** 1-10000 (warn if > 10000)
 --epochs 50-100
 ```
 

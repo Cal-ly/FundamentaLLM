@@ -295,6 +295,139 @@ fundamentallm train data/raw/shakespeare/shakespeare1mil.txt \ \
 
 ### 2. Monitor Training
 
+During training, you'll see output like:
+```
+Epoch 1/20
+[████████░░] 50%  |  train_loss=2.934 | val_loss=2.509 | lr=1.37e-04 | throughput=98091 tokens/sec
+```
+
+**Understanding Training Output**
+
+#### Loss Metrics
+
+**`train_loss`** - Average training loss across batches
+- **What it means:** How well the model predicts the next token during training
+- **Conceptually:** Lower = model is learning the training patterns better
+- **Ideal behavior:** Smooth, steady decrease over epochs
+- **Watch for:**
+  - Erratic spikes → Learning rate too high (exploding gradients)
+  - Completely flat → Learning rate too low or model converged
+  - Slight noise → Normal, indicates stochastic gradient descent working
+
+**Example interpretation:**
+```
+Epoch 1: train_loss=3.215  ← Model is initially guessing poorly
+Epoch 5: train_loss=2.120  ← Getting better at predictions
+Epoch 10: train_loss=1.804 ← Fine-tuning the learned patterns
+```
+
+**`val_loss`** - Loss measured on validation data (unseen during training)
+- **What it means:** How well the model generalizes to new data
+- **Conceptually:** The real test of model performance
+- **Ideal behavior:** Decreases along with training loss, following similar trend
+- **Watch for:**
+  - **Diverging:** val_loss increases while train_loss decreases = **overfitting**
+    - Model is memorizing training data instead of learning generalizable patterns
+    - Solution: reduce `--dropout`, use less epochs, or get more training data
+  - **Both increasing:** Configuration issue (bad learning rate, bad data)
+  - **Both flat:** Model converged or hit a learning plateau
+
+**Key insight - Why both matter:**
+```
+Good training (Epoch 10):
+  train_loss=1.5, val_loss=1.7  ← Similar, good generalization ✅
+
+Overfitting (Epoch 15):
+  train_loss=0.8, val_loss=2.5  ← Huge gap, memorizing ❌
+
+Underfitting (Epoch 10):
+  train_loss=3.0, val_loss=3.1  ← Both high, needs more capacity ❌
+```
+
+#### Learning & Speed Metrics
+
+**`lr` (Learning Rate)**
+- Current learning rate at this step
+- **Conceptually:** How big are the weight updates?
+- **Changes over time:** If using `--lr-schedule`, this will decay
+- **Example:** `lr=1.37e-04` means updating weights by tiny fractions
+
+**`throughput` (tokens/sec)**
+- How many tokens per second your model processes
+- **Affects total training time:** More tokens/sec = faster training
+- **Factors that reduce throughput:**
+  - Larger model (more computation)
+  - Larger batch size initially speeds up, then hits memory limits
+  - GPU memory pressure
+
+#### Perplexity (if displayed)
+
+- **What it is:** $\text{Perplexity} = e^{\text{loss}}$
+- **Conceptually:** "How many equally-likely choices does the model think there are?"
+- **Intuition:**
+  - Perplexity = 1 → Perfect predictions
+  - Perplexity = 100 → Model thinks 100 tokens are equally likely
+  - Lower is better
+- **Target ranges:**
+  - Character-level: 1.5-3.0 (reasonable)
+  - Token-level: 10-50 (reasonable)
+
+#### Validation Loss Patterns
+
+**Pattern: Both losses decreasing together** ✅ Good
+```
+Epoch  train_loss  val_loss
+1      3.200       3.180
+5      2.100       2.090
+10     1.500       1.520
+```
+Model is learning generalizable patterns. Continue training or stop when loss plateaus.
+
+**Pattern: Train decreasing, val increasing** ❌ Overfitting
+```
+Epoch  train_loss  val_loss
+1      3.200       3.180
+5      1.800       2.200
+10     0.900       2.800
+```
+Model is memorizing training data. Fix by:
+- Reducing epochs
+- Increasing dropout (`--dropout 0.2`)
+- Using less model capacity (`--model-dim 128` instead of 256)
+
+**Pattern: Both increasing or flat** ❌ Configuration issue
+```
+Epoch  train_loss  val_loss
+1      3.200       3.180
+5      3.100       3.220
+10     3.050       3.250
+```
+Possible causes:
+- Learning rate too high (gradients exploding)
+- Learning rate too low (barely learning)
+- Bad data or data pipeline issue
+- Model too small for the task
+
+### Best Practices for Monitoring
+
+1. **Watch the first epoch closely**
+   - First few steps: loss should rapidly decrease (exponentially)
+   - If loss doesn't decrease: learning rate too low
+
+2. **Compare train vs validation**
+   - Gap of 5-15% is normal and healthy
+   - Gap > 50% suggests overfitting
+
+3. **Check every N epochs, not every step**
+   - Focus on overall trend, not noise
+   - Small fluctuations are normal
+
+4. **Save checkpoints at best validation loss**
+   - Model automatically saves when val_loss improves
+   - This prevents overfitting by using the best-performing version
+
+### 3. Learning Rate Scheduling
+
 Watch these metrics:
 
 **Training Loss**
@@ -314,8 +447,6 @@ Watch these metrics:
 - Periodically generate text to check
 - Qualitative assessment of coherence
 
-### 3. Learning Rate Scheduling
-
 Use learning rate schedules for better convergence:
 
 ```bash
@@ -330,24 +461,95 @@ Use learning rate schedules for better convergence:
 - **Cosine:** Smooth decay following cosine curve
 - **Warmup:** Start low, ramp up, then decay
 
-### 4. Checkpointing
+### 4. Checkpointing & Model Selection
 
-Training automatically saves checkpoints:
+FundamentaLLM automatically saves multiple versions during training:
 
 ```
 my_model/
-├── checkpoint_epoch_1.pt
-├── checkpoint_epoch_2.pt
-├── checkpoint_epoch_3.pt
+├── checkpoint_epoch_1.pt      # Checkpoint after epoch 1
+├── checkpoint_epoch_2.pt      # Checkpoint after epoch 2
 ...
-└── final_model.pt
+├── best.pt                     # Model with lowest validation loss
+└── final_model.pt             # Model after training completed
 ```
 
-**Resume training:**
+#### Understanding Best vs Final Models
+
+**`best.pt`** - The model that generalized best during training
+- **When to use:** Usually the preferred choice for generation/deployment
+- **Why it exists:** Captures the point where validation loss was lowest
+- **Conceptually:** This is the "sweet spot" before overfitting became severe
+- **Created when:** FundamentaLLM finds a new best validation loss
+
+**`final_model.pt`** - The model after all epochs completed
+- **When to use:** Only if you specifically want the latest state
+- **Caution:** May be overfit if validation loss was increasing near the end
+- **Example case:**
+  ```
+  Epoch 10: val_loss=1.50 ← best.pt saved here (best generalization)
+  Epoch 15: val_loss=1.55 ← val_loss increasing (overfitting)
+  Epoch 20: val_loss=1.63 ← final_model.pt here (worst generalization)
+  ```
+
+#### Which Model to Use?
+
+**Default recommendation:** Use `best.pt` for generation and deployment
+```bash
+# Best practice - use the model with best validation performance
+fundamentallm generate my_model/best.pt --prompt "Once upon a time"
+```
+
+**When final_model.pt might be better:**
+- If you cut training short and validation loss was still decreasing
+- If you used very aggressive regularization and overfitting wasn't an issue
+- If you want the latest state for resuming training
+
+#### Why They Can Differ
+
+Training on the same data with same parameters, `best.pt` and `final_model.pt` differ because:
+
+1. **Training trajectory matters**
+   - Early epochs: Model is learning patterns
+   - Middle epochs: Model improves on validation data
+   - Late epochs: Model overfits, validation performance degrades
+
+2. **Overfitting dynamics**
+   - Model continues learning training patterns even after generalizing best
+   - Eventually starts memorizing training-specific details
+   - Validation loss increases when memorization overtakes learning
+
+3. **Optimal stopping point**
+   - Best validation loss = best general learning point
+   - Final loss = after model had time to memorize
+
+#### Example: Monitoring Which is Better
+
+```
+Model Training Progress:
+Epoch  train_loss  val_loss   Selected
+1      3.200       3.180      
+2      2.800       2.750      
+3      2.500       2.400      
+4      2.200       2.150      
+5      1.900       2.000      best.pt ⭐ (validation stops improving)
+6      1.600       2.050      
+7      1.300       2.180      
+8      1.100       2.350      
+9      0.900       2.520      
+10     0.750       2.680      final_model.pt (overfitting evident)
+```
+
+At epoch 5, the model has learned to generalize best. After that, it's memorizing training details, causing validation loss to increase.
+
+#### Manual Checkpoint Resumption
+
+If you want to resume training from `best.pt`:
 ```bash
 fundamentallm train data.txt \ \
     --output-dir my_model \ \
-    --resume-from my_model/checkpoint_epoch_10.pt
+    --resume-from my_model/best.pt \ \
+    --epochs 30  # Continue for more epochs
 ```
 
 ### 5. Mixed Precision Training

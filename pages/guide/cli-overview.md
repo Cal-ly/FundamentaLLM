@@ -31,18 +31,20 @@ fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
 
 **All options:**
 - `--output-dir` - Where to save checkpoints and final model
-- `--epochs` - Training epochs (default: 10)
-- `--batch-size` - Batch size (default: 16)
-- `--learning-rate` - Learning rate (default: 1e-3)
-- `--model-dim` - Model hidden dimension (default: 128)
-- `--num-heads` - Number of attention heads (default: 2)
-- `--num-layers` - Number of transformer layers (default: 6)
-- `--dropout` - Dropout rate (default: 0.1)
-- `--max-seq-len` - Maximum sequence length (default: 256)
-- `--val-split` - Validation split ratio (default: 0.1)
+- `--epochs` - Training epochs (default: 10; max: 10000)
+- `--batch-size` - Batch size (default: 16; range: 1-2048)
+- `--learning-rate` - Learning rate (default: 1e-3; recommended: 1e-4 to 1e-3)
+- `--model-dim` - Model hidden dimension (default: 128; minimum: 64)
+- `--num-heads` - Number of attention heads (default: 2; must divide `--model-dim`)
+- `--num-layers` - Number of transformer layers (default: 6; max: 48)
+- `--dropout` - Dropout rate (default: 0.1; range: 0.0-1.0)
+- `--max-seq-len` - Maximum sequence length (default: 256; warn if >8192)
+- `--val-split` - Validation split ratio (default: 0.2; range: 0.0-1.0)
 - `--seed` - Random seed (default: 42)
 - `--device` - CPU or CUDA (default: auto-detect)
 - `--mixed-precision` - Use mixed precision training (default: false)
+- `--auto-fix-config` - Automatically fix parameter conflicts (default: true)
+- `--gradient-clip` - Gradient clipping value (default: 1.0; warn if >10)
 
 ### Generating Text
 
@@ -112,6 +114,53 @@ Test Loss:    3.234
 Perplexity:   25.34
 Accuracy:     0.42
 ```
+
+## Parameter Validation & Auto-Fix
+
+FundamentaLLM validates all parameters before training to catch configuration issues early.
+
+### What Gets Validated
+
+**Critical validation** (will block training if violated):
+- `num_heads` must divide `model_dim` evenly (e.g., 256/8 = 32 ✓, but 256/7 = ✗)
+- `num_heads` must not exceed `model_dim / 8` (keeps head dimension ≥ 8)
+- `model_dim` must be ≥ 64
+
+**Warnings** (logged but won't block):
+- `model_dim` < 64 (underfitting risk)
+- `learning_rate` > 0.1 or < 1e-6 (unstable learning)
+- `max_seq_len` > 8192 (out-of-memory risk)
+- `batch_size` > 2048 (memory intensive)
+- `gradient_clip` > 10 (may impede learning)
+
+### Auto-Fix Behavior
+
+By default (`--auto-fix-config`, enabled by default), FundamentaLLM will automatically fix parameter conflicts:
+
+**Example: Auto-fixing num_heads**
+
+If you request an invalid configuration:
+```bash
+fundamentallm train data.txt \
+    --model-dim 512 \
+    --num-heads 16  # Would cause head_dim < 8
+```
+
+The system will log:
+```
+WARNING: num_heads (16) too high relative to d_model (512).
+Auto-fixing: num_heads 16 → 8 (head_dim = 512/8 = 64)
+```
+
+To see what would be fixed without auto-correcting:
+```bash
+fundamentallm train data.txt \
+    --model-dim 512 \
+    --num-heads 16 \
+    --auto-fix-config false
+```
+
+This will report the issue but won't proceed.
 
 ## Interactive Mode
 

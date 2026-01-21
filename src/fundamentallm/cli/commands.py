@@ -135,6 +135,85 @@ def _apply_model_overrides(
         model_config.sequence_length = sequence_length
 
 
+HEAD_DIM_FLOOR = 8
+
+
+def _adjust_num_heads(model_config: TransformerConfig) -> Optional[Tuple[int, int, int]]:
+    """Auto-fix num_heads to satisfy divisibility and head-dim floor (>=HEAD_DIM_FLOOR).
+
+    Returns old/new heads and d_model when an adjustment occurs, otherwise None.
+    """
+
+    d_model = model_config.d_model
+    adjusted = _safe_num_heads(d_model, model_config.num_heads)
+
+    if adjusted == model_config.num_heads:
+        return None
+
+    old = model_config.num_heads
+    model_config.num_heads = adjusted
+    return old, adjusted, d_model
+
+
+def _safe_num_heads(d_model: int, requested_heads: int) -> int:
+    """Compute a safe num_heads without mutating configs."""
+
+    max_heads_by_dim = max(d_model // HEAD_DIM_FLOOR, 1)
+    target = min(requested_heads, max_heads_by_dim)
+
+    adjusted = target
+    while adjusted > 1 and d_model % adjusted != 0:
+        adjusted -= 1
+    if adjusted < 1:
+        adjusted = 1
+    return adjusted
+
+
+def _enforce_model_config(model_config: TransformerConfig, auto_fix: bool) -> None:
+    """Convert critical model config issues into errors, with optional auto-fix."""
+
+    issues = validate_model_config(model_config)
+    if not issues:
+        return
+
+    # Identify critical head-related issues.
+    critical = [
+        issue for issue in issues if "num_heads" in issue or "divisible" in issue
+    ]
+
+    if auto_fix:
+        fix = _adjust_num_heads(model_config)
+        if fix:
+            old, new, d_model = fix
+            click.echo(
+                f"Warning: auto-fix adjusted num_heads from {old} to {new} (d_model={d_model}, head_dim={d_model // new})"
+            )
+        issues = validate_model_config(model_config)
+        warn_on_issues(issues, "TransformerConfig")
+        remaining_critical = [
+            issue for issue in issues if "num_heads" in issue or "divisible" in issue
+        ]
+        if remaining_critical:
+            raise click.ClickException(
+                "TransformerConfig still invalid after auto-fix: " + "; ".join(remaining_critical)
+            )
+        return
+
+    if critical:
+        d_model = model_config.d_model
+        rec_heads = _safe_num_heads(d_model, model_config.num_heads)
+        recommendation = (
+            f" Try num_heads={rec_heads} (head_dim={d_model // rec_heads}) or enable --auto-fix-config."
+            if rec_heads != model_config.num_heads
+            else ""
+        )
+        raise click.ClickException(
+            "Invalid TransformerConfig: " + "; ".join(critical) + recommendation
+        )
+
+    warn_on_issues(issues, "TransformerConfig")
+
+
 def _print_eval_results(results: dict) -> None:
     click.echo("Evaluation results (validation split)")
     click.echo("-" * 80)
@@ -270,6 +349,11 @@ def cli() -> None:
 )
 @click.option("--profile/--no-profile", default=False, help="Enable lightweight profiler")
 @click.option("--quiet", is_flag=True, help="Reduce logging verbosity")
+@click.option(
+    "--auto-fix-config/--no-auto-fix-config",
+    default=True,
+    help="Auto-adjust invalid config (e.g., num_heads vs d_model)",
+)
 def train(
     data_path: Path,
     config_path: Optional[Path],
@@ -290,6 +374,7 @@ def train(
     resume_from: Optional[Path],
     profile: bool,
     quiet: bool,
+    auto_fix_config: bool,
 ) -> None:
     """Train a language model on text data."""
 
@@ -357,8 +442,7 @@ def train(
         sequence_length=max_seq_len,
     )
 
-    model_issues = validate_model_config(model_config)
-    warn_on_issues(model_issues, "TransformerConfig")
+    _enforce_model_config(model_config, auto_fix_config)
 
     if training_config.seed is not None:
         set_seed(training_config.seed)
