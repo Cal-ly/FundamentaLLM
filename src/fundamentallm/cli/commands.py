@@ -187,8 +187,10 @@ def _enforce_model_config(model_config: TransformerConfig, auto_fix: bool) -> No
         fix = _adjust_num_heads(model_config)
         if fix:
             old, new, d_model = fix
+            head_dim = d_model // new
             click.echo(
-                f"Warning: auto-fix adjusted num_heads from {old} to {new} (d_model={d_model}, head_dim={d_model // new})"
+                f"Warning: auto-fix adjusted num_heads from {old} to {new}"
+                f" (d_model={d_model}, head_dim={head_dim})"
             )
         issues = validate_model_config(model_config)
         warn_on_issues(issues, "TransformerConfig")
@@ -209,9 +211,8 @@ def _enforce_model_config(model_config: TransformerConfig, auto_fix: bool) -> No
             if rec_heads != model_config.num_heads
             else ""
         )
-        raise click.ClickException(
-            "Invalid TransformerConfig: " + "; ".join(critical) + recommendation
-        )
+        error_msg = "Invalid TransformerConfig: " + "; ".join(critical) + recommendation
+        raise click.ClickException(error_msg)
 
     warn_on_issues(issues, "TransformerConfig")
 
@@ -248,7 +249,6 @@ def _cleanup_intermediate_checkpoints(checkpoint_dir: Path) -> None:
     """Remove intermediate epoch and step checkpoints, keeping only final and best."""
     checkpoint_dir = Path(checkpoint_dir)
     final_path = checkpoint_dir / "final_model.pt"
-    best_path = checkpoint_dir / "best.pt"
 
     if not final_path.exists():
         logger.debug("No final_model.pt found; skipping cleanup")

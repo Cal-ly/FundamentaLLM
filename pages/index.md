@@ -14,7 +14,7 @@ hero:
       link: /guide/introduction
     - theme: alt
       text: View on GitHub
-      link: https://github.com/your-org/fundamentallm
+      link: https://github.com/Cal-ly/FundamentaLLM
 
 features:
   - title: "📚 Educational Focus"

@@ -179,7 +179,7 @@ def test_cli_resume_and_multi_generate(tmp_path):
     assert len(first_epochs) == 0, "First training should clean up epochs"
 
     out_file = checkpoint_dir / "generations.txt"
-    generate_result = runner.invoke(
+    runner.invoke(
         cli,
         [
             "generate",
