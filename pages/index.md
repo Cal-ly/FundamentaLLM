@@ -17,16 +17,16 @@ hero:
       link: https://github.com/Cal-ly/FundamentaLLM
 
 features:
-  - title: "📚 Educational Focus"
-    details: "Clean, well-documented code designed for learning. Every component is explained from first principles."
-  - title: "🔄 Complete Pipeline"
+  - title: "Educational Focus"
+    details: "Clean, documented code designed for education. Every component is explained from first principles."
+  - title: "Complete Pipeline"
     details: "From tokenization through training to generation and evaluation. See the full lifecycle of language models."
-  - title: "🧠 Theory & Practice"
+  - title: "Theory & Practice"
     details: "Learn the mathematical foundations behind transformers while building working implementations."
-  - title: "🎯 Production Quality"
-    details: "Type safety, comprehensive tests, and configuration-first design. Learn best practices while learning ML."
-  - title: "🛠️ Interactive CLI"
-    details: "User-friendly command-line interface with rich output. Train, generate, and evaluate from your terminal."
-  - title: "✅ Well Tested"
-    details: "178+ tests with >85% coverage. See how to test ML code properly."
+  - title: "Production Standards"
+    details: "Type safety, comprehensive tests, and linting. Employing CI principles where applicable."
+  - title: "Interactive CLI"
+    details: "Developer-friendly command-line interface with rich output. Train, generate, and evaluate from your terminal."
+  - title: "Tested"
+    details: "181 tests with >85% coverage."
 ---
