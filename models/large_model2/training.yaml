@@ -3,7 +3,7 @@ train_split: 0.9
 sequence_length: 256
 batch_size: 64
 num_workers: 4
-learning_rate: 0.0003
+learning_rate: 0.001
 optimizer: adamw
 optimizer_eps: 1.0e-08
 optimizer_weight_decay: 0.01
@@ -20,7 +20,7 @@ gradient_accumulation_steps: null
 gradient_clip_norm: null
 gradient_checkpointing: false
 mixed_precision: false
-num_epochs: 50
+num_epochs: 10
 max_epochs: null
 max_steps: null
 eval_steps: 100

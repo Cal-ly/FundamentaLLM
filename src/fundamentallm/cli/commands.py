@@ -132,6 +132,65 @@ def _apply_model_overrides(
         model_config.sequence_length = sequence_length
 
 
+def _print_eval_results(results: dict) -> None:
+    click.echo("Evaluation results (validation split)")
+    click.echo("-" * 80)
+    for key in ("loss", "perplexity", "accuracy"):
+        value = results.get(key)
+        if value is None:
+            continue
+        if isinstance(value, float):
+            click.echo(f"{key:12s}: {value:.4f}")
+        else:
+            click.echo(f"{key:12s}: {value}")
+    click.echo("-" * 80)
+
+
+def _save_validation_split(text: str, tokenizer: CharacterTokenizer, cfg: TrainingConfig) -> None:
+    tokens = tokenizer.encode(text)
+    train_size = max(int(len(tokens) * cfg.train_split), 1)
+    val_tokens = tokens[train_size:]
+    if not val_tokens:
+        logger.info("Validation split empty; skipping validation export")
+        return
+
+    val_text = tokenizer.decode(val_tokens)
+    out_path = Path(cfg.checkpoint_dir) / "validation.txt"
+    out_path.write_text(val_text, encoding="utf-8")
+    logger.info(f"Validation split written to {out_path}")
+
+
+def _cleanup_intermediate_checkpoints(checkpoint_dir: Path) -> None:
+    """Remove intermediate epoch and step checkpoints, keeping only final and best."""
+    checkpoint_dir = Path(checkpoint_dir)
+    final_path = checkpoint_dir / "final_model.pt"
+    best_path = checkpoint_dir / "best.pt"
+
+    if not final_path.exists():
+        logger.debug("No final_model.pt found; skipping cleanup")
+        return
+
+    deleted = []
+    # Remove epoch checkpoints
+    for ckpt in checkpoint_dir.glob("epoch_*.pt"):
+        try:
+            ckpt.unlink()
+            deleted.append(ckpt.name)
+        except OSError as exc:
+            logger.warning(f"Failed to delete {ckpt.name}: {exc}")
+
+    # Remove step checkpoints
+    for ckpt in checkpoint_dir.glob("step_*.pt"):
+        try:
+            ckpt.unlink()
+            deleted.append(ckpt.name)
+        except OSError as exc:
+            logger.warning(f"Failed to delete {ckpt.name}: {exc}")
+
+    if deleted:
+        click.echo(f"Cleaned up {len(deleted)} intermediate checkpoints")
+
+
 def _build_scheduler(
     training_config: TrainingConfig,
     optimizer: torch.optim.Optimizer,
@@ -303,6 +362,12 @@ def train(
     click.echo("Creating dataloaders...")
     train_loader, val_loader = create_dataloaders(text, tokenizer, training_config)
 
+    # Persist validation split for manual re-use
+    try:
+        _save_validation_split(text, tokenizer, training_config)
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("Failed to export validation split: %s", exc)
+
     steps_per_epoch = len(train_loader)
     if steps_per_epoch == 0:
         raise click.ClickException(
@@ -388,7 +453,24 @@ def train(
                 total_epochs=target_epochs,
             )
 
+    eval_results = None
+    if val_loader is not None:
+        try:
+            if len(val_loader) == 0:
+                click.echo("Validation set empty; skipping evaluation.")
+            else:
+                click.echo("Evaluating model on validation split...")
+                evaluator = ModelEvaluator(model, tokenizer, device=training_config.device)
+                eval_results = evaluator.evaluate(val_loader)
+                _print_eval_results(eval_results)
+        except Exception as exc:
+            logger.warning("Validation evaluation failed: %s", exc)
+
     final_metrics = history[-1] if history else {}
+    if eval_results:
+        for key, value in eval_results.items():
+            if key not in final_metrics:
+                final_metrics[key] = float(value) if isinstance(value, float) else value
     final_path = Path(training_config.checkpoint_dir) / "final_model.pt"
     manager = trainer.checkpoint_manager
     epoch_value = final_metrics.get("epoch", training_config.num_epochs - 1)
@@ -415,6 +497,9 @@ def train(
 
     click.echo(f"Saved model to {final_path}")
     click.echo(f"Saved tokenizer to {tokenizer_path}")
+
+    # Clean up intermediate checkpoints
+    _cleanup_intermediate_checkpoints(training_config.checkpoint_dir)
 
 
 @cli.command()

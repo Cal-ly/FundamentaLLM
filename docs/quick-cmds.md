@@ -32,3 +32,8 @@ fundamentallm generate models/comp_model1/final_model.pt --prompt "The " --max-t
 
 ## Generate from complex, deeply trained model
 fundamentallm generate models/comp_model2/final_model.pt --prompt "The " --max-tokens 100 --temperature 0.7
+
+
+fundamentallm train data/raw/shakespeare/shakespeare1mil.txt --output-dir large_model --model-dim 512 --num-heads 8 --num-layers 12 --batch-size 64 --device cuda
+
+fundamentallm generate models/large_model2/final_model.pt --interactive

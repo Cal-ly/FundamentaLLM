@@ -15,7 +15,7 @@ class TrainingConfig(BaseConfig):
 
     # Data
     data_path: Optional[Path] = Field(None)
-    train_split: float = Field(0.9, gt=0.0, lt=1.0)
+    train_split: float = Field(0.8, gt=0.0, lt=1.0)
     sequence_length: int = Field(256, gt=0)
     batch_size: int = Field(16, gt=0)
     num_workers: int = Field(4, ge=0)

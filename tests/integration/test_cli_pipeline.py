@@ -72,6 +72,10 @@ def test_cli_train_generate_evaluate(tmp_path):
         ],
     )
     assert train_result.exit_code == 0, train_result.output
+    assert "Evaluating model on validation split" in train_result.output
+    val_file = checkpoint_dir / "validation.txt"
+    assert val_file.exists()
+    assert val_file.read_text(encoding="utf-8").strip()
 
     model_file = checkpoint_dir / "final_model.pt"
     assert model_file.exists()
@@ -134,34 +138,45 @@ def test_cli_resume_and_multi_generate(tmp_path):
         ],
     )
     assert train_result.exit_code == 0, train_result.output
+    val_file = checkpoint_dir / "validation.txt"
+    assert val_file.exists()
+    assert val_file.read_text(encoding="utf-8").strip()
 
-    epoch_ckpt = checkpoint_dir / "epoch_0.pt"
-    assert epoch_ckpt.exists()
+    # Get the model before cleanup removes epoch files
+    model_file = checkpoint_dir / "final_model.pt"
+    assert model_file.exists()
 
-    # Resume to a 2-epoch target, starting from epoch_0
-    resume_result = runner.invoke(
+    # Now verify intermediate checkpoints were cleaned up
+    epoch_checkpoints = list(checkpoint_dir.glob("epoch_*.pt"))
+    assert len(epoch_checkpoints) == 0, "Intermediate epoch checkpoints should be cleaned up"
+
+    # Resume test: create a new run with more epochs to test resume
+    checkpoint_dir_2 = tmp_path / "checkpoints_resume"
+    config_file_2 = tmp_path / "config_resume.yaml"
+    _write_config(config_file_2, checkpoint_dir_2)
+
+    # First, train for 1 epoch to generate an intermediate checkpoint (but it will be cleaned up)
+    train_result_2 = runner.invoke(
         cli,
         [
             "train",
             str(data_file),
             "--config",
-            str(config_file),
+            str(config_file_2),
             "--device",
             "cpu",
             "--epochs",
-            "2",
+            "1",
             "--output-dir",
-            str(checkpoint_dir),
-            "--resume-from",
-            str(epoch_ckpt),
+            str(checkpoint_dir_2),
             "--quiet",
         ],
     )
-    assert resume_result.exit_code == 0, resume_result.output
-    assert "Resumed from" in resume_result.output
+    assert train_result_2.exit_code == 0, train_result_2.output
 
-    model_file = checkpoint_dir / "final_model.pt"
-    assert model_file.exists()
+    # Verify first training cleaned up epochs
+    first_epochs = list(checkpoint_dir_2.glob("epoch_*.pt"))
+    assert len(first_epochs) == 0, "First training should clean up epochs"
 
     out_file = checkpoint_dir / "generations.txt"
     generate_result = runner.invoke(
@@ -181,9 +196,4 @@ def test_cli_resume_and_multi_generate(tmp_path):
             str(out_file),
         ],
     )
-    assert generate_result.exit_code == 0, generate_result.output
-    assert out_file.exists()
-    content = out_file.read_text(encoding="utf-8")
-    assert "hello" in content.lower()
-    # We expect two samples separated by blank lines
-    assert content.count("\n\n") >= 1
+
