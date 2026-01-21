@@ -30,7 +30,7 @@ fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
 ```
 
 **All options:**
-- `--output-dir` - Where to save checkpoints and final model
+- `--output-dir` - Output directory for checkpoints and final model. Relative paths auto-prefix with `models/` (e.g., `my_model` → `models/my_model/`). Default: `models/checkpoints/`
 - `--epochs` - Training epochs (default: 10; max: 10000)
 - `--batch-size` - Batch size (default: 16; range: 1-2048)
 - `--learning-rate` - Learning rate (default: 1e-3; recommended: 1e-4 to 1e-3)
@@ -44,7 +44,7 @@ fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
 - `--device` - CPU or CUDA (default: auto-detect)
 - `--mixed-precision` - Use mixed precision training (default: false)
 - `--auto-fix-config` - Automatically fix parameter conflicts (default: true)
-- `--gradient-clip` - Gradient clipping value (default: 1.0; warn if >10)
+- `--gradient-clip` - Gradient clipping norm to prevent exploding gradients (default: 1.0; typical: 0.5-2.0)
 
 ### Generating Text
 
@@ -115,6 +115,58 @@ Perplexity:   25.34
 Accuracy:     0.42
 ```
 
+## Output Directory Organization
+
+FundamentaLLM automatically organizes model outputs under a `models/` directory to keep your project clean.
+
+### How Output Directory Works
+
+**Relative paths auto-prefix with `models/`:**
+```bash
+# These are equivalent:
+fundamentallm train data.txt --output-dir my_model
+fundamentallm train data.txt --output-dir models/my_model
+
+# Both create: models/my_model/checkpoints, models/my_model/best.pt, etc.
+```
+
+**Absolute paths are unchanged:**
+```bash
+fundamentallm train data.txt --output-dir /absolute/path/my_model
+# Creates: /absolute/path/my_model/
+```
+
+**No flag uses default:**
+```bash
+fundamentallm train data.txt
+# Creates: models/checkpoints/ (default)
+```
+
+### Directory Structure
+
+```
+your_project/
+├── models/                          ← All models here
+│   ├── checkpoints/                 ← Default output
+│   │   ├── checkpoint_epoch_1.pt
+│   │   ├── best.pt
+│   │   └── final_model.pt
+│   ├── shakespeare_model/           ← From: --output-dir shakespeare_model
+│   │   └── final_model.pt
+│   └── custom_config/               ← From: --output-dir custom_config
+│       └── best.pt
+├── data/
+├── configs/
+└── src/
+```
+
+### Why This Organization?
+
+- **Clean root:** Your project root stays uncluttered
+- **Consistency:** All models in one place
+- **Easy discovery:** Know exactly where to find model files
+- **Backup-friendly:** Single directory to backup/version control
+
 ## Parameter Validation & Auto-Fix
 
 FundamentaLLM validates all parameters before training to catch configuration issues early.
@@ -152,15 +204,45 @@ WARNING: num_heads (16) too high relative to d_model (512).
 Auto-fixing: num_heads 16 → 8 (head_dim = 512/8 = 64)
 ```
 
-To see what would be fixed without auto-correcting:
+**To disable auto-fix:**
+
+If you want strict validation without auto-correction:
 ```bash
 fundamentallm train data.txt \
     --model-dim 512 \
     --num-heads 16 \
-    --auto-fix-config false
+    --no-auto-fix-config
 ```
 
-This will report the issue but won't proceed.
+This will report the issue and block training rather than auto-adjusting.
+
+**Why auto-fix is enabled by default:**
+- Prevents training from failing on slightly misconfigured parameters
+- Logs clear warnings so you know what changed
+- Users can still disable it for strict validation if needed
+
+## Parameter Bounds Reference
+
+Use these ranges when setting parameters to avoid warnings and ensure stability:
+
+| Parameter | Min | Max | Recommended | Warn If | Notes |
+|-----------|-----|-----|------------|---------|-------|
+| `--model-dim` | 64 | 8192 | 128-512 | < 64 | Must divide evenly by `num_heads` |
+| `--num-heads` | 1 | d_model/8 | 4-16 | — | Must divide `model_dim`; auto-fix keeps ≥ 8 |
+| `--num-layers` | 1 | 48 | 6-24 | > 48 | Hard limit from model schema |
+| `--batch-size` | 1 | 2048 | 16-64 | > 2048 | Affects memory usage significantly |
+| `--learning-rate` | >0 | 0.1 | 1e-4 to 1e-3 | < 1e-6 or > 0.1 | Most important for stability |
+| `--dropout` | 0.0 | 1.0 | 0.1-0.3 | — | Regularization strength |
+| `--gradient-clip` | >0 | 10 | 0.5-2.0 | > 10 | Prevents exploding gradients |
+| `--epochs` | 1 | 10000 | 10-50 | > 10000 | Controls training duration |
+| `--max-seq-len` | 1 | 8192+ | 256-1024 | > 8192 | Longer sequences need more memory |
+| `--val-split` | (0, 1) | — | 0.2 | — | 80/20 split recommended |
+| `--seed` | — | — | 42 | — | For reproducibility |
+
+**Head dimension rule:** `head_dimension = model_dim / num_heads` must be ≥ 8
+- Example: 512 dim ÷ 8 heads = 64 per head ✅
+- Example: 256 dim ÷ 16 heads = 16 per head ✅
+- Example: 128 dim ÷ 32 heads = 4 per head ❌ (too small, auto-fix reduces heads)
 
 ## Interactive Mode
 

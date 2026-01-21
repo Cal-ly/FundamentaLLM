@@ -250,20 +250,26 @@ Higher dropout when:
 **Memory:** Attention is O(n²), so doubling sequence length = 4× memory
 
 #### Validation Split (`--val-split`)
-**What:** Fraction of data for validation  
-**Default:** 0.1 (10%)  
-**Typical range:** 0.05-0.2
+**What:** Fraction of data reserved for validation  
+**Default:** 0.2 (20% validation, 80% training)
+**Typical range:** 0.05-0.3
 
 ```bash
-# Small validation set
---val-split 0.05
+# Smaller validation set (for small datasets)
+--val-split 0.1  # 90/10 split
 
-# Standard
---val-split 0.1
+# Standard (recommended)
+--val-split 0.2  # 80/20 split (default)
 
-# Large validation set
---val-split 0.2
+# Larger validation set (for very large datasets)
+--val-split 0.3  # 70/30 split
 ```
+
+**Why 80/20 by default?**
+- 80% gives the model enough training signal
+- 20% provides reliable validation metrics
+- Standard practice in machine learning
+- Better at detecting overfitting than smaller validation sets
 
 ## Training Strategies
 

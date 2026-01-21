@@ -31,7 +31,7 @@ fundamentallm train data/samples/sample_data.txt \
 
 **What happens:**
 - Tokenizes the input file (character-level)
-- Creates training/validation datasets
+- Creates training/validation datasets (80% train, 20% validation by default)
 - Trains a small transformer (128 hidden dims, 2 attention heads)
 - Saves checkpoints every epoch
 - Logs metrics to console
@@ -49,6 +49,14 @@ fundamentallm train data/samples/sample_data.txt \
 ```
 
 ## Step 3: Generate Text
+
+Your trained model is now saved in `models/my_first_model/`. The key files are:
+- `models/my_first_model/best.pt` - Best model (based on validation loss)
+- `models/my_first_model/final_model.pt` - Final model (after all epochs)
+- `models/my_first_model/training.yaml` - Training configuration
+- `models/my_first_model/tokenizer.json` - Character vocabulary
+
+Let's generate text from it:
 
 ```bash
 # Generate from your trained model

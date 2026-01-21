@@ -98,15 +98,33 @@ Unlike model parameters (weights), hyperparameters are not learned from data.
 - More heads → Capture different patterns
 - Each head has smaller dimension (d_model / num_heads)
 
-**Constraint:** `num_heads` must divide `model_dim` evenly.
+**Constraints:**
+1. `num_heads` must divide `model_dim` evenly (e.g., 512 ÷ 8 = 64 ✓, but 512 ÷ 7 = ✗)
+2. Head dimension (`d_model / num_heads`) must be ≥ 8 (auto-fixed if violated)
 
 **How to tune:**
 ```bash
-# model_dim=128: use 2, 4, 8
-# model_dim=256: use 4, 8, 16
-# model_dim=512: use 8, 16
+# model_dim=128: use 2, 4, 8 (gives head_dim of 64, 32, 16)
+# model_dim=256: use 4, 8, 16 (gives head_dim of 64, 32, 16)
+# model_dim=512: use 4, 8, 16, 32 (gives head_dim of 128, 64, 32, 16)
 
-# General rule: num_heads = model_dim / 64
+# Valid combinations must satisfy:
+# - num_heads divides model_dim evenly
+# - head_dim = model_dim / num_heads >= 8
+
+# General rule: num_heads = model_dim / 64 (balanced)
+```
+
+**Examples:**
+```bash
+# ✓ Valid
+--model-dim 512 --num-heads 8  # 512/8=64 (head_dim)
+--model-dim 256 --num-heads 4  # 256/4=64 (head_dim)
+--model-dim 128 --num-heads 2  # 128/2=64 (head_dim)
+
+# ✗ Invalid (auto-fixed)
+--model-dim 256 --num-heads 6  # 256 not divisible by 6 → auto-fix to 4 or 8
+--model-dim 64 --num-heads 8   # 64/8=8 (head_dim) → OK but very small heads
 ```
 
 **Sweet spot:** 8 heads for most models.
@@ -138,6 +156,38 @@ Unlike model parameters (weights), hyperparameters are not learned from data.
 - Small dataset
 - Signs of overfitting
 - Large model
+
+### Gradient Clipping (`--gradient-clip`)
+
+**What it controls:** Maximum allowed gradient magnitude before clipping.
+
+**Why it matters:** Prevents "exploding gradients" - when gradients become very large, training becomes unstable and loss becomes NaN.
+
+**Analogy:** Like a speed limiter on a car - lets it accelerate normally but prevents runaway speeds.
+
+**When gradients explode:**
+- Loss suddenly spikes to NaN or infinity
+- Happens with large learning rates, long sequences, or deep models
+- Training crashes instead of gradually converging
+
+**How to tune:**
+```bash
+# Balanced default (works for most cases)
+--gradient-clip 1.0
+
+# If loss becomes NaN (gradients too large)
+--gradient-clip 0.5   # More aggressive clipping
+
+# More conservative (smaller updates)
+--gradient-clip 0.1
+
+# If gradient clipping seems excessive (slowing training)
+--gradient-clip 5.0   # Less aggressive
+```
+
+**Safe range:** 0.5 to 2.0 (typical values)
+
+**Warning sign:** If you need `--gradient-clip < 0.5` frequently, your learning rate is probably too high.
 
 ## Training Configuration
 

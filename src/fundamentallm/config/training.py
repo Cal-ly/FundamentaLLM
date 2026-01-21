@@ -50,7 +50,7 @@ class TrainingConfig(BaseConfig):
     dropout: float = Field(0.1, ge=0.0, le=1.0)
 
     # Checkpointing
-    checkpoint_dir: Path = Field(Path("./checkpoints"))
+    checkpoint_dir: Path = Field(Path("./models/checkpoints"))
     checkpoint_keep_last: int = Field(3, gt=0)
     save_every_n_steps: Optional[int] = Field(None, gt=0)
     save_every_n_epochs: int = Field(1, gt=0)

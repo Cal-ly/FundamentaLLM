@@ -61,7 +61,7 @@ python scripts/compare_experiments.py experiments/
 # Best hyperparameters, longer training
 fundamentallm train data/processed/train.txt \
     --validation-data data/processed/val.txt \
-    --output-dir models/production \
+    --output-dir production \
     --learning-rate 0.001 \
     --model-dim 512 \
     --num-layers 8 \

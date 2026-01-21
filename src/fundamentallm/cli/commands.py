@@ -91,7 +91,11 @@ def _apply_overrides(
     gradient_clip: Optional[float],
 ) -> None:
     if output_dir is not None:
-        training_config.checkpoint_dir = Path(output_dir).expanduser()
+        output_path = Path(output_dir).expanduser()
+        # If relative path and doesn't already start with 'models/', prepend it
+        if not output_path.is_absolute() and not str(output_path).startswith("models"):
+            output_path = Path("models") / output_path
+        training_config.checkpoint_dir = output_path
     if epochs is not None:
         training_config.num_epochs = epochs
     if batch_size is not None:

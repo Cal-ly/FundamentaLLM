@@ -307,7 +307,7 @@ wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakesp
 
 # Train medium model
 fundamentallm train input.txt \
-    --output-dir models/shakespeare \
+    --output-dir shakespeare \
     --epochs 20 \
     --batch-size 64
 

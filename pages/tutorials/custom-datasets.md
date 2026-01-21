@@ -20,7 +20,7 @@ fundamentallm train file1.txt file2.txt file3.txt
 
 ```bash
 fundamentallm train my_data.txt \
-    --output-dir models/my_model \
+    --output-dir my_model \
     --epochs 20 \
     --batch-size 32
 ```
@@ -35,7 +35,7 @@ tail -n 10000 my_data.txt > val.txt
 # Train with validation
 fundamentallm train train.txt \
     --validation-data val.txt \
-    --output-dir models/my_model \
+    --output-dir my_model \
     --early-stopping
 ```
 
@@ -84,7 +84,7 @@ cat src/**/*.py > project_code.txt
 
 # Train
 fundamentallm train code_data.txt \
-    --output-dir models/code_model \
+    --output-dir code_model \
     --model-dim 256 \
     --num-layers 8 \
     --epochs 30
@@ -133,7 +133,7 @@ Bob: Welcome!
 
 ```bash
 fundamentallm train dialogue_data.txt \
-    --output-dir models/dialogue_model \
+    --output-dir dialogue_model \
     --max-seq-len 512 \
     --epochs 25
 ```
@@ -165,7 +165,7 @@ Inside the cave, ancient symbols glowed with an ethereal light.
 
 ```bash
 fundamentallm train stories_data.txt \
-    --output-dir models/story_model \
+    --output-dir story_model \
     --model-dim 512 \
     --num-layers 12 \
     --max-seq-len 512 \
@@ -217,7 +217,7 @@ The main class for interacting with the library.
 
 ```bash
 fundamentallm train docs_data.txt \
-    --output-dir models/docs_model \
+    --output-dir docs_model \
     --model-dim 256 \
     --epochs 20
 ```
@@ -252,7 +252,7 @@ Our model consists of the following components:
 
 ```bash
 fundamentallm train papers_data.txt \
-    --output-dir models/academic_model \
+    --output-dir academic_model \
     --model-dim 512 \
     --num-layers 10 \
     --dropout 0.15 \
@@ -607,7 +607,7 @@ tail -n 5000 data/clean_blogs.txt > data/blogs_val.txt
 # 4. Train
 fundamentallm train data/blogs_train.txt \
     --validation-data data/blogs_val.txt \
-    --output-dir models/blog_model \
+    --output-dir blog_model \
     --model-dim 256 \
     --num-layers 6 \
     --epochs 25 \
@@ -635,7 +635,7 @@ python format_conversations.py data/support_logs_clean.txt data/formatted.txt
 # 4. Train
 fundamentallm train data/formatted.txt \
     --val-split 0.1 \
-    --output-dir models/support_model \
+    --output-dir support_model \
     --model-dim 256 \
     --num-layers 8 \
     --epochs 30 \
