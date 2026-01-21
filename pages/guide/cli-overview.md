@@ -19,13 +19,13 @@ fundamentallm train data/samples/sample_data.txt --output-dir my_model
 
 **Common options:**
 ```bash
-fundamentallm train data/raw/shakespeare/shakespeare100k.txt
-    --output-dir shakespeare_model
-    --epochs 20
-    --batch-size 32
-    --learning-rate 0.001
-    --model-dim 256
-    --num-heads 4
+fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
+    --output-dir shakespeare_model \
+    --epochs 20 \
+    --batch-size 32 \
+    --learning-rate 0.001 \
+    --model-dim 256 \
+    --num-heads 4 \
     --num-layers 6
 ```
 
@@ -57,11 +57,11 @@ fundamentallm generate my_model/final_model.pt --prompt "The "
 
 **Common options:**
 ```bash
-fundamentallm generate my_model/final_model.pt
-    --prompt "Once upon a time"
-    --max-tokens 200
-    --temperature 0.8
-    --top-k 50
+fundamentallm generate my_model/final_model.pt \
+    --prompt "Once upon a time" \
+    --max-tokens 200 \
+    --temperature 0.8 \
+    --top-k 50 \
     --interactive
 ```
 
@@ -157,8 +157,8 @@ Goodbye!
 For reproducible training, use configuration files:
 
 ```bash
-fundamentallm train data/samples/sample_data.txt
-    --config configs/small.yaml
+fundamentallm train data/samples/sample_data.txt \
+    --config configs/small.yaml \
     --output-dir my_model
 ```
 
@@ -194,8 +194,8 @@ See `configs/` directory for examples.
 
 ```bash
 # Use PyTorch profiler (with --profile flag)
-fundamentallm train data/samples/sample_data.txt
-    --output-dir my_model
+fundamentallm train data/samples/sample_data.txt \
+    --output-dir my_model \
     --profile
 ```
 
@@ -204,8 +204,8 @@ fundamentallm train data/samples/sample_data.txt
 ```bash
 # Training automatically checkpoints every epoch
 # Resume by pointing to checkpoint directory
-fundamentallm train data/samples/sample_data.txt
-    --output-dir my_model
+fundamentallm train data/samples/sample_data.txt \
+    --output-dir my_model \
     --resume-from my_model/checkpoint_epoch_10.pt
 ```
 
@@ -213,30 +213,30 @@ fundamentallm train data/samples/sample_data.txt
 
 **Small (for CPU/quick testing):**
 ```bash
-fundamentallm train data/samples/sample_data.txt
-    --output-dir small_model
-    --model-dim 64
-    --num-heads 2
-    --num-layers 3
+fundamentallm train data/samples/sample_data.txt \
+    --output-dir small_model \
+    --model-dim 64 \
+    --num-heads 2 \
+    --num-layers 3 \
     --epochs 5
 ```
 
 **Medium (typical):**
 ```bash
-fundamentallm train data/raw/shakespeare/shakespeare100k.txt
-    --output-dir medium_model
-    --model-dim 256
-    --num-heads 4
+fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
+    --output-dir medium_model \
+    --model-dim 256 \
+    --num-heads 4 \
     --num-layers 6
 ```
 
 **Large (for GPU with lots of VRAM):**
 ```bash
-fundamentallm train data/raw/shakespeare/shakespeare1mil.txt
-    --output-dir large_model
-    --model-dim 512
-    --num-heads 8
-    --num-layers 12
+fundamentallm train data/raw/shakespeare/shakespeare1mil.txt \
+    --output-dir large_model \
+    --model-dim 512 \
+    --num-heads 8 \
+    --num-layers 12 \
     --batch-size 64
 ```
 
@@ -244,9 +244,9 @@ fundamentallm train data/raw/shakespeare/shakespeare1mil.txt
 
 ```bash
 # Generate 10 different outputs
-fundamentallm generate my_model/final_model.pt
-    --prompt "Once upon a time"
-    --num-samples 10
+fundamentallm generate my_model/final_model.pt \
+    --prompt "Once upon a time" \
+    --num-samples 10 \
     --output-file generations.txt
 ```
 
@@ -299,11 +299,11 @@ fundamentallm --version
 ### Quick Testing
 ```bash
 # Fast training to test pipeline
-fundamentallm train data/samples/sample_data.txt
-    --output-dir test_model
-    --epochs 2
-    --batch-size 16
-    --model-dim 64
+fundamentallm train data/samples/sample_data.txt \
+    --output-dir test_model \
+    --epochs 2 \
+    --batch-size 16 \
+    --model-dim 64 \
     --num-layers 2
 
 # Quick generate
@@ -313,14 +313,14 @@ fundamentallm generate test_model/final_model.pt --prompt "Test"
 ### Full Training
 ```bash
 # Serious training
-fundamentallm train data/raw/shakespeare/shakespeare500k.txt
-    --output-dir real_model
-    --epochs 50
-    --batch-size 32
-    --learning-rate 0.0005
-    --model-dim 512
-    --num-heads 8
-    --num-layers 12
+fundamentallm train data/raw/shakespeare/shakespeare500k.txt \
+    --output-dir real_model \
+    --epochs 50 \
+    --batch-size 32 \
+    --learning-rate 0.0005 \
+    --model-dim 512 \
+    --num-heads 8 \
+    --num-layers 12 \
     --mixed-precision
 
 # Explore the trained model
@@ -332,10 +332,10 @@ fundamentallm generate real_model/final_model.pt --interactive
 # Try different learning rates
 for lr in 0.0001 0.0005 0.001 0.005; do
     echo "Training with LR=$lr"
-    fundamentallm train data/samples/sample_data.txt
-        --output-dir model_lr_${lr}
-        --learning-rate $lr
-        --epochs 5
+    fundamentallm train data/samples/sample_data.txt \
+    --output-dir model_lr_${lr} \
+    --learning-rate $lr \
+    --epochs 5
 done
 
 # Evaluate each

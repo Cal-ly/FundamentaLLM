@@ -68,3 +68,8 @@ checkpoints/
 # Environment
 .env
 .env.local
+
+# Node.js / npm (documentation is in pages/ folder)
+node_modules/
+package-lock.json
+.vitepress/

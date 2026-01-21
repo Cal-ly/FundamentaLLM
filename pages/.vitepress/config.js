@@ -1,10 +1,27 @@
 import { defineConfig } from 'vitepress'
+import mathjax3 from 'markdown-it-mathjax3'
 
 export default defineConfig({
   title: 'FundamentaLLM',
   description: 'Educational Framework for Learning Language Models from First Principles',
   base: '/FundamentaLLM/',
   ignoreDeadLinks: true,
+  head: [
+    [
+      'script',
+      {
+        type: 'text/javascript',
+        id: 'MathJax-script',
+        async: true,
+        src: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+      }
+    ]
+  ],
+  markdown: {
+    config: (md) => {
+      md.use(mathjax3)
+    }
+  },
   themeConfig: {
     logo: '/logo.svg',
     siteTitle: 'FundamentaLLM',

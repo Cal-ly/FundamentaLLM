@@ -288,13 +288,13 @@ Continuous smooth decay.
 ### 1. Start with Defaults
 
 ```bash
-fundamentallm train data.txt \
-    --output-dir baseline \
-    --model-dim 128 \
-    --num-layers 6 \
-    --num-heads 8 \
-    --learning-rate 0.001 \
-    --batch-size 32 \
+fundamentallm train data.txt \ \
+    --output-dir baseline \ \
+    --model-dim 128 \ \
+    --num-layers 6 \ \
+    --num-heads 8 \ \
+    --learning-rate 0.001 \ \
+    --batch-size 32 \ \
     --epochs 20
 ```
 
@@ -303,10 +303,10 @@ fundamentallm train data.txt \
 ```bash
 for lr in 0.0001 0.001 0.01; do
     for dim in 128 256 512; do
-        fundamentallm train data.txt \
-            --output-dir exp_lr${lr}_dim${dim} \
-            --learning-rate $lr \
-            --model-dim $dim
+        fundamentallm train data.txt \ \
+    --output-dir exp_lr${lr}_dim${dim} \ \
+    --learning-rate $lr \ \
+    --model-dim $dim
     done
 done
 ```
@@ -393,8 +393,8 @@ Lower is better. Intuitive measure of model quality.
 
 ```bash
 # Test after each experiment
-fundamentallm generate model.pt \
-    --prompt "Test prompt" \
+fundamentallm generate model.pt \ \
+    --prompt "Test prompt" \ \
     --temperature 0.8
 ```
 
@@ -566,10 +566,10 @@ fundamentallm train data.txt --output-dir baseline
 ```bash
 # Try 5 learning rates
 for lr in 0.0001 0.0005 0.001 0.005 0.01; do
-    fundamentallm train data.txt \
-        --output-dir exp_lr_$lr \
-        --learning-rate $lr \
-        --epochs 10
+    fundamentallm train data.txt \ \
+    --output-dir exp_lr_$lr \ \
+    --learning-rate $lr \ \
+    --epochs 10
 done
 ```
 
@@ -579,11 +579,11 @@ done
 # Best LR from day 2, try model sizes
 best_lr=0.001
 for dim in 128 256 512; do
-    fundamentallm train data.txt \
-        --output-dir exp_dim_$dim \
-        --learning-rate $best_lr \
-        --model-dim $dim \
-        --epochs 20
+    fundamentallm train data.txt \ \
+    --output-dir exp_dim_$dim \ \
+    --learning-rate $best_lr \ \
+    --model-dim $dim \ \
+    --epochs 20
 done
 ```
 
@@ -591,12 +591,12 @@ done
 
 ```bash
 # Best config, longer training
-fundamentallm train data.txt \
-    --output-dir final \
-    --learning-rate 0.001 \
-    --model-dim 256 \
-    --num-layers 8 \
-    --epochs 50 \
+fundamentallm train data.txt \ \
+    --output-dir final \ \
+    --learning-rate 0.001 \ \
+    --model-dim 256 \ \
+    --num-layers 8 \ \
+    --epochs 50 \ \
     --early-stopping
 ```
 

@@ -24,8 +24,8 @@ ls -la data/raw/shakespeare/
 
 ```bash
 # Train a small model on sample data (takes ~1 minute)
-fundamentallm train data/samples/sample_data.txt \
-    --output-dir my_first_model \
+fundamentallm train data/samples/sample_data.txt \ \
+    --output-dir my_first_model \ \
     --epochs 5
 ```
 
@@ -52,9 +52,9 @@ fundamentallm train data/samples/sample_data.txt \
 
 ```bash
 # Generate from your trained model
-fundamentallm generate my_first_model/final_model.pt \
-    --prompt "The " \
-    --max-tokens 100 \
+fundamentallm generate my_first_model/final_model.pt \ \
+    --prompt "The " \ \
+    --max-tokens 100 \ \
     --temperature 0.7
 ```
 
@@ -160,21 +160,21 @@ Even with minimal training:
 ### Train Longer with More Data
 
 ```bash
-fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
-    --output-dir shakespeare_model \
-    --epochs 20 \
+fundamentallm train data/raw/shakespeare/shakespeare100k.txt \ \
+    --output-dir shakespeare_model \ \
+    --epochs 20 \ \
     --batch-size 32
 ```
 
 ### Use Custom Hyperparameters
 
 ```bash
-fundamentallm train data/samples/sample_data.txt \
-    --output-dir custom_model \
-    --model-dim 256 \
-    --num-heads 4 \
-    --num-layers 8 \
-    --learning-rate 0.001 \
+fundamentallm train data/samples/sample_data.txt \ \
+    --output-dir custom_model \ \
+    --model-dim 256 \ \
+    --num-heads 4 \ \
+    --num-layers 8 \ \
+    --learning-rate 0.001 \ \
     --epochs 10
 ```
 

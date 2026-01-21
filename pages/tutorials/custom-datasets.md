@@ -19,9 +19,9 @@ fundamentallm train file1.txt file2.txt file3.txt
 ### 2. Basic Training
 
 ```bash
-fundamentallm train my_data.txt \
-    --output-dir models/my_model \
-    --epochs 20 \
+fundamentallm train my_data.txt \ \
+    --output-dir models/my_model \ \
+    --epochs 20 \ \
     --batch-size 32
 ```
 
@@ -33,9 +33,9 @@ head -n 90000 my_data.txt > train.txt
 tail -n 10000 my_data.txt > val.txt
 
 # Train with validation
-fundamentallm train train.txt \
-    --validation-data val.txt \
-    --output-dir models/my_model \
+fundamentallm train train.txt \ \
+    --validation-data val.txt \ \
+    --output-dir models/my_model \ \
     --early-stopping
 ```
 
@@ -83,10 +83,10 @@ find . -name "*.py" -type f -exec cat {} \; > code_data.txt
 cat src/**/*.py > project_code.txt
 
 # Train
-fundamentallm train code_data.txt \
-    --output-dir models/code_model \
-    --model-dim 256 \
-    --num-layers 8 \
+fundamentallm train code_data.txt \ \
+    --output-dir models/code_model \ \
+    --model-dim 256 \ \
+    --num-layers 8 \ \
     --epochs 30
 ```
 
@@ -132,9 +132,9 @@ Bob: Welcome!
 **Train:**
 
 ```bash
-fundamentallm train dialogue_data.txt \
-    --output-dir models/dialogue_model \
-    --max-seq-len 512 \
+fundamentallm train dialogue_data.txt \ \
+    --output-dir models/dialogue_model \ \
+    --max-seq-len 512 \ \
     --epochs 25
 ```
 
@@ -164,12 +164,12 @@ Inside the cave, ancient symbols glowed with an ethereal light.
 **Train:**
 
 ```bash
-fundamentallm train stories_data.txt \
-    --output-dir models/story_model \
-    --model-dim 512 \
-    --num-layers 12 \
-    --max-seq-len 512 \
-    --temperature 0.9 \
+fundamentallm train stories_data.txt \ \
+    --output-dir models/story_model \ \
+    --model-dim 512 \ \
+    --num-layers 12 \ \
+    --max-seq-len 512 \ \
+    --temperature 0.9 \ \
     --epochs 30
 ```
 
@@ -216,9 +216,9 @@ The main class for interacting with the library.
 **Train:**
 
 ```bash
-fundamentallm train docs_data.txt \
-    --output-dir models/docs_model \
-    --model-dim 256 \
+fundamentallm train docs_data.txt \ \
+    --output-dir models/docs_model \ \
+    --model-dim 256 \ \
     --epochs 20
 ```
 
@@ -251,11 +251,11 @@ Our model consists of the following components:
 **Train:**
 
 ```bash
-fundamentallm train papers_data.txt \
-    --output-dir models/academic_model \
-    --model-dim 512 \
-    --num-layers 10 \
-    --dropout 0.15 \
+fundamentallm train papers_data.txt \ \
+    --output-dir models/academic_model \ \
+    --model-dim 512 \ \
+    --num-layers 10 \ \
+    --dropout 0.15 \ \
     --epochs 30
 ```
 
@@ -605,18 +605,18 @@ head -n 45000 data/clean_blogs.txt > data/blogs_train.txt
 tail -n 5000 data/clean_blogs.txt > data/blogs_val.txt
 
 # 4. Train
-fundamentallm train data/blogs_train.txt \
-    --validation-data data/blogs_val.txt \
-    --output-dir models/blog_model \
-    --model-dim 256 \
-    --num-layers 6 \
-    --epochs 25 \
+fundamentallm train data/blogs_train.txt \ \
+    --validation-data data/blogs_val.txt \ \
+    --output-dir models/blog_model \ \
+    --model-dim 256 \ \
+    --num-layers 6 \ \
+    --epochs 25 \ \
     --batch-size 32
 
 # 5. Test generation
-fundamentallm generate models/blog_model/final.pt \
-    --prompt "## How to Build a Blog\n\n" \
-    --temperature 0.8 \
+fundamentallm generate models/blog_model/final.pt \ \
+    --prompt "## How to Build a Blog\n\n" \ \
+    --temperature 0.8 \ \
     --max-length 500
 ```
 
@@ -633,12 +633,12 @@ python anonymize.py data/support_logs.txt data/support_logs_clean.txt
 python format_conversations.py data/support_logs_clean.txt data/formatted.txt
 
 # 4. Train
-fundamentallm train data/formatted.txt \
-    --val-split 0.1 \
-    --output-dir models/support_model \
-    --model-dim 256 \
-    --num-layers 8 \
-    --epochs 30 \
+fundamentallm train data/formatted.txt \ \
+    --val-split 0.1 \ \
+    --output-dir models/support_model \ \
+    --model-dim 256 \ \
+    --num-layers 8 \ \
+    --epochs 30 \ \
     --early-stopping
 
 # 5. Interactive mode for testing

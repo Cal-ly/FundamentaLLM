@@ -45,17 +45,3 @@ fundamentallm train data/raw/shakespeare/shakespeare_complete.txt --output-dir m
 
 #### Generate from complex, deeply trained model
 fundamentallm generate models/comp_model_deep/final_model.pt --prompt "The " --max-tokens 100 --temperature 0.7
-
-
-
-fundamentallm train data/raw/shakespeare/shakespeare_complete.txt \
-  --output-dir models/comp_model_deep \
-  --model-dim 512 \
-  --batch-size 64 \
-  --num-heads 16 \
-  --epochs 50 \
-  --learning-rate 0.0003 \
-  --dropout 0.2 \
-  --mixed-precision \
-  --gradient-clip 1.0 \
-  --device cuda

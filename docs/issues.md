@@ -22,6 +22,6 @@
 - Explan in depth, why there might be a difference between a final model and a best model, in regards to a model trained on the same material and with the same parameters.
 
 ### Formatting
-- Formatting of the bash command examples, that has multiple line, doesn't allow direct copy-paste. Start with `cli-overview.html`.
-- Mathematical notation in e.g. `autoregressive.html` doens't render corrently. Currently it looks like this `$$\mathcal{L} = -\frac{1}{N} \sum_{i=1}^{N} \log P(x_i | x_{<i})$$`. The issue might be with the formatting itself or if we need a math or a tex package.
+- DONE: Formatting of the bash command examples, that has multiple line, doesn't allow direct copy-paste. Start with `cli-overview.html`.
+- DONE: Mathematical notation in e.g. `autoregressive.html` doens't render corrently. Currently it looks like this `$$\mathcal{L} = -\frac{1}{N} \sum_{i=1}^{N} \log P(x_i | x_{<i})$$`. The issue might be with the formatting itself or if we need a math or a tex package.
 

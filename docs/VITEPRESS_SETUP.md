@@ -66,9 +66,68 @@ pages/
 - ✅ **Search-Ready** - Built-in search functionality
 - ✅ **Mobile Responsive** - Works on all devices
 - ✅ **Code Highlighting** - Syntax highlighting for 50+ languages
-- ✅ **Math Support** - KaTeX equations (inline and block)
+- ✅ **Math Support** - MathJax 3 rendering for LaTeX equations (inline `$...$` and block `$$...$$`)
 - ✅ **Dark Mode** - Auto-detects system preference
 - ✅ **Social Links** - GitHub integration
+
+## Math Rendering Configuration
+
+The documentation supports mathematical notation using MathJax 3 via the `markdown-it-mathjax3` plugin.
+
+### Setup Details
+
+**Package installed:**
+```bash
+npm install -D markdown-it-mathjax3
+```
+
+**VitePress config** (`.vitepress/config.js`):
+```javascript
+import mathjax3 from 'markdown-it-mathjax3'
+
+export default defineConfig({
+  head: [
+    [
+      'script',
+      {
+        type: 'text/javascript',
+        id: 'MathJax-script',
+        async: true,
+        src: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+      }
+    ]
+  ],
+  markdown: {
+    config: (md) => {
+      md.use(mathjax3)
+    }
+  },
+  // ... rest of config
+})
+```
+
+### Usage in Markdown
+
+**Inline math:**
+```markdown
+The equation $E = mc^2$ is famous.
+The loss is $\mathcal{L} = -\log P(x)$.
+```
+
+**Display/block math:**
+```markdown
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
+
+$$\mathcal{L} = -\frac{1}{N} \sum_{i=1}^{N} \log P(x_i | x_{<i})$$
+```
+
+**Files with math notation:**
+- `concepts/autoregressive.md` - Training objectives, loss functions
+- `concepts/attention.md` - Attention mechanisms
+- `concepts/transformers.md` - Positional encoding
+- `guide/evaluation.md` - Evaluation metrics
+- `guide/generation.md` - Temperature scaling
+- And more...
 
 ## How to Use
 
