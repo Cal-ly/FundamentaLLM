@@ -196,4 +196,3 @@ def test_cli_resume_and_multi_generate(tmp_path):
             str(out_file),
         ],
     )
-

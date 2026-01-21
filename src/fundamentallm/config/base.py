@@ -50,9 +50,7 @@ class BaseConfig(BaseModel):
             yaml.safe_dump(dumped, handle, sort_keys=False)
 
     @classmethod
-    def from_yaml(
-        cls: Type[T], path: Path, env_prefix: str | list[str] = "FLLM"
-    ) -> T:
+    def from_yaml(cls: Type[T], path: Path, env_prefix: str | list[str] = "FLLM") -> T:
         path = Path(path)
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         if not isinstance(data, dict):

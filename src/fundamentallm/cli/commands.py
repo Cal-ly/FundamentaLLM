@@ -181,9 +181,7 @@ def _enforce_model_config(model_config: TransformerConfig, auto_fix: bool) -> No
         return
 
     # Identify critical head-related issues.
-    critical = [
-        issue for issue in issues if "num_heads" in issue or "divisible" in issue
-    ]
+    critical = [issue for issue in issues if "num_heads" in issue or "divisible" in issue]
 
     if auto_fix:
         fix = _adjust_num_heads(model_config)
@@ -509,7 +507,9 @@ def train(
             )
             trainer.global_step = restored_step
             start_epoch = restored_epoch + 1
-            click.echo(f"Resumed from {resume_from} at epoch {restored_epoch + 1}, step {restored_step}")
+            click.echo(
+                f"Resumed from {resume_from} at epoch {restored_epoch + 1}, step {restored_step}"
+            )
         except Exception as exc:
             raise click.ClickException(f"Failed to resume from {resume_from}: {exc}") from exc
 
@@ -606,8 +606,12 @@ def train(
     "--temperature", type=float, default=1.0, show_default=True, help="Sampling temperature"
 )
 @click.option("--top-k", type=int, help="Top-k sampling")
-@click.option("--top-p", type=float, default=1.0, show_default=True, help="Top-p (nucleus) sampling")
-@click.option("--num-samples", type=int, default=1, show_default=True, help="Number of samples to generate")
+@click.option(
+    "--top-p", type=float, default=1.0, show_default=True, help="Top-p (nucleus) sampling"
+)
+@click.option(
+    "--num-samples", type=int, default=1, show_default=True, help="Number of samples to generate"
+)
 @click.option("--output-file", type=click.Path(path_type=Path), help="Write generations to file")
 @click.option("--interactive", is_flag=True, help="Launch interactive REPL")
 @click.option(

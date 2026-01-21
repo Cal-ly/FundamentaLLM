@@ -273,7 +273,9 @@ class Trainer:
 
         epochs = num_epochs if num_epochs is not None else getattr(self.config, "num_epochs", 1)
         total = total_epochs if total_epochs is not None else start_epoch + epochs
-        logger.info(f"Starting training for {epochs} epochs (epochs {start_epoch + 1}-{start_epoch + epochs} of {total})")
+        logger.info(
+            f"Starting training for {epochs} epochs (epochs {start_epoch + 1}-{start_epoch + epochs} of {total})"
+        )
 
         for epoch in range(start_epoch, start_epoch + epochs):
             epoch_metrics = self.train_epoch(epoch)

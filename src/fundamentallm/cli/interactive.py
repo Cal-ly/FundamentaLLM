@@ -138,4 +138,6 @@ class InteractiveREPL:
             f"top_k = {self.top_k}",
             f"top_p = {self.top_p}",
         ]
-        self.console.print(Panel("\n".join(status_lines), title="Current Settings", border_style="cyan"))
+        self.console.print(
+            Panel("\n".join(status_lines), title="Current Settings", border_style="cyan")
+        )

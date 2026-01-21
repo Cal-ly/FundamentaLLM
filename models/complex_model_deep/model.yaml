@@ -1,0 +1,8 @@
+vocab_size: 87
+d_model: 512
+num_heads: 16
+num_layers: 12
+sequence_length: 256
+dropout: 0.2
+ffn_expansion: 4
+pos_encoding: learned
