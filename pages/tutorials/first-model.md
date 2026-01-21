@@ -38,12 +38,12 @@ This is a small text file. Language models learn from any text - books, code, di
 Let's start with a very small, fast-training model:
 
 ```bash
-fundamentallm train data/samples/sample_data.txt \ \
-    --output-dir my_first_model \ \
-    --model-dim 64 \ \
-    --num-heads 2 \ \
-    --num-layers 2 \ \
-    --epochs 5 \ \
+fundamentallm train data/samples/sample_data.txt \
+    --output-dir my_first_model \
+    --model-dim 64 \
+    --num-heads 2 \
+    --num-layers 2 \
+    --epochs 5 \
     --batch-size 16
 ```
 
@@ -114,9 +114,9 @@ Look for:
 Now let's use the trained model:
 
 ```bash
-fundamentallm generate my_first_model/final_model.pt \ \
-    --prompt "The" \ \
-    --max-tokens 50 \ \
+fundamentallm generate my_first_model/final_model.pt \
+    --prompt "The" \
+    --max-tokens 50 \
     --temperature 0.8
 ```
 
@@ -207,12 +207,12 @@ fundamentallm evaluate my_first_model/final_model.pt \
 Now let's train a larger, better model:
 
 ```bash
-fundamentallm train data/raw/shakespeare/shakespeare100k.txt \ \
-    --output-dir shakespeare_model \ \
-    --model-dim 256 \ \
-    --num-heads 8 \ \
-    --num-layers 6 \ \
-    --epochs 20 \ \
+fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
+    --output-dir shakespeare_model \
+    --model-dim 256 \
+    --num-heads 8 \
+    --num-layers 6 \
+    --epochs 20 \
     --batch-size 32
 ```
 
@@ -264,13 +264,13 @@ Once the Shakespeare model finishes:
 
 ```bash
 # Generate from both models
-echo "=== Tiny Model ===" fundamentallm generate my_first_model/final_model.pt \ \
-    --prompt "To be or not to be" \ \
+echo "=== Tiny Model ===" fundamentallm generate my_first_model/final_model.pt \
+    --prompt "To be or not to be" \
     --max-tokens 100
 
 echo "\n=== Shakespeare Model ==="
-fundamentallm generate shakespeare_model/final_model.pt \ \
-    --prompt "To be or not to be" \ \
+fundamentallm generate shakespeare_model/final_model.pt \
+    --prompt "To be or not to be" \
     --max-tokens 100
 ```
 
@@ -284,8 +284,8 @@ Try these experiments:
 
 ```bash
 # Train on your own text file
-fundamentallm train my_text.txt \ \
-    --output-dir my_custom_model \ \
+fundamentallm train my_text.txt \
+    --output-dir my_custom_model \
     --epochs 20
 ```
 
@@ -396,13 +396,13 @@ You're ready to explore deeper topics in language modeling!
 
 ### Train tiny model (2 min)
 ```bash
-fundamentallm train data/samples/sample_data.txt \ \
+fundamentallm train data/samples/sample_data.txt \
     --output-dir tiny --epochs 5
 ```
 
 ### Train good model (30 min)
 ```bash
-fundamentallm train data/raw/shakespeare/shakespeare100k.txt \ \
+fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
     --output-dir good --epochs 20 --model-dim 256
 ```
 

@@ -22,16 +22,16 @@ tail -n 10000 data/processed/clean.txt > data/processed/val.txt
 
 ```bash
 # Quick baseline with small model
-fundamentallm train data/processed/train.txt \ \
-    --validation-data data/processed/val.txt \ \
-    --output-dir experiments/baseline \ \
-    --model-dim 128 \ \
-    --num-layers 4 \ \
-    --epochs 10 \ \
+fundamentallm train data/processed/train.txt \
+    --validation-data data/processed/val.txt \
+    --output-dir experiments/baseline \
+    --model-dim 128 \
+    --num-layers 4 \
+    --epochs 10 \
     --batch-size 32
 
 # Check results
-fundamentallm evaluate experiments/baseline/final.pt \ \
+fundamentallm evaluate experiments/baseline/final.pt \
     --data data/processed/val.txt
 ```
 
@@ -41,12 +41,12 @@ fundamentallm evaluate experiments/baseline/final.pt \ \
 # Grid search
 for lr in 0.0001 0.001 0.01; do
     for dim in 128 256 512; do
-        fundamentallm train data/processed/train.txt \ \
-    --validation-data data/processed/val.txt \ \
-    --output-dir experiments/lr_${lr}_dim_${dim} \ \
-    --learning-rate $lr \ \
-    --model-dim $dim \ \
-    --epochs 20 \ \
+        fundamentallm train data/processed/train.txt \
+    --validation-data data/processed/val.txt \
+    --output-dir experiments/lr_${lr}_dim_${dim} \
+    --learning-rate $lr \
+    --model-dim $dim \
+    --epochs 20 \
     --early-stopping
     done
 done
@@ -59,21 +59,21 @@ python scripts/compare_experiments.py experiments/
 
 ```bash
 # Best hyperparameters, longer training
-fundamentallm train data/processed/train.txt \ \
-    --validation-data data/processed/val.txt \ \
-    --output-dir models/production \ \
-    --learning-rate 0.001 \ \
-    --model-dim 512 \ \
-    --num-layers 8 \ \
-    --num-heads 8 \ \
-    --dropout 0.1 \ \
-    --epochs 50 \ \
-    --batch-size 64 \ \
-    --lr-schedule cosine \ \
-    --warmup-steps 2000 \ \
-    --gradient-clip 1.0 \ \
-    --mixed-precision \ \
-    --early-stopping \ \
+fundamentallm train data/processed/train.txt \
+    --validation-data data/processed/val.txt \
+    --output-dir models/production \
+    --learning-rate 0.001 \
+    --model-dim 512 \
+    --num-layers 8 \
+    --num-heads 8 \
+    --dropout 0.1 \
+    --epochs 50 \
+    --batch-size 64 \
+    --lr-schedule cosine \
+    --warmup-steps 2000 \
+    --gradient-clip 1.0 \
+    --mixed-precision \
+    --early-stopping \
     --patience 10
 ```
 

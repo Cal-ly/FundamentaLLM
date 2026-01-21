@@ -159,10 +159,10 @@ plt.show()
 
 ```bash
 # Generate multiple samples
-fundamentallm generate model.pt \ \
-    --prompt "Once upon a time" \ \
-    --num-samples 5 \ \
-    --max-length 200 \ \
+fundamentallm generate model.pt \
+    --prompt "Once upon a time" \
+    --num-samples 5 \
+    --max-length 200 \
     --temperature 0.8
 ```
 
@@ -407,18 +407,18 @@ fundamentallm evaluate $MODEL --data test.txt
 
 # 2. Sample generation
 echo "=== Sample Generation ==="
-fundamentallm generate $MODEL \ \
-    --prompt "Once upon a time" \ \
-    --num-samples 3 \ \
+fundamentallm generate $MODEL \
+    --prompt "Once upon a time" \
+    --num-samples 3 \
     --temperature 0.8
 
 # 3. Temperature sweep
 echo "=== Temperature Sweep ==="
 for temp in 0.3 0.8 1.2; do
     echo "Temperature: $temp"
-    fundamentallm generate $MODEL \ \
-    --prompt "The quick" \ \
-    --temperature $temp \ \
+    fundamentallm generate $MODEL \
+    --prompt "The quick" \
+    --temperature $temp \
     --max-length 50
 done
 
@@ -426,8 +426,8 @@ done
 echo "=== Prompt Diversity ==="
 for prompt in "Hello" "In the year" "Dear Sir"; do
     echo "Prompt: $prompt"
-    fundamentallm generate $MODEL \ \
-    --prompt "$prompt" \ \
+    fundamentallm generate $MODEL \
+    --prompt "$prompt" \
     --max-length 50
 done
 ```
@@ -445,9 +445,9 @@ Monitor metrics in real-time:
 
 ```bash
 # Training with logging
-fundamentallm train data.txt \ \
-    --validation-data val.txt \ \
-    --log-interval 100 \ \
+fundamentallm train data.txt \
+    --validation-data val.txt \
+    --log-interval 100 \
     --eval-interval 1000
 
 # Outputs:
@@ -480,8 +480,8 @@ Run with different random seeds:
 
 ```bash
 for seed in 1 2 3 4 5; do
-    fundamentallm train data.txt \ \
-    --seed $seed \ \
+    fundamentallm train data.txt \
+    --seed $seed \
     --output-dir run_$seed
 done
 

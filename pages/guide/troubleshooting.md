@@ -762,8 +762,8 @@ torch.cuda.empty_cache()
 **Auto-fix behavior:** With `--auto-fix-config` (default), FundamentaLLM automatically fixes this:
 ```bash
 # This gets auto-corrected to num_heads=8
-fundamentallm train data.txt \ \
-    --model-dim 512 \ \
+fundamentallm train data.txt \
+    --model-dim 512 \
     --num-heads 16  # Too high! Would cause head_dim < 8
 
 # Logs:
@@ -805,10 +805,10 @@ Bad:   200 / 8 = 25   ❌ (doesn't divide evenly)
 
 ```bash
 # Tiny model, tiny data, few epochs
-fundamentallm train small.txt \ \
-    --model-dim 64 \ \
-    --num-layers 2 \ \
-    --batch-size 8 \ \
+fundamentallm train small.txt \
+    --model-dim 64 \
+    --num-layers 2 \
+    --batch-size 8 \
     --epochs 2
 
 # If this works, scale up incrementally

@@ -6,7 +6,7 @@ Learn how to generate text from trained models and control the generation proces
 
 ```bash
 # Basic generation
-fundamentallm generate my_model/final_model.pt \ \
+fundamentallm generate my_model/final_model.pt \
     --prompt "Once upon a time"
 
 # Interactive mode
@@ -217,9 +217,9 @@ next_token = torch.multinomial(filtered_probs, 1)
 Best practice: **Temperature + Top-p**
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "The wizard" \ \
-    --temperature 0.8 \ \
+fundamentallm generate model.pt \
+    --prompt "The wizard" \
+    --temperature 0.8 \
     --top-p 0.9
 ```
 
@@ -315,10 +315,10 @@ Goodbye!
 ### Creative Writing
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "Write a short story:" \ \
-    --temperature 1.2 \ \
-    --top-p 0.9 \ \
+fundamentallm generate model.pt \
+    --prompt "Write a short story:" \
+    --temperature 1.2 \
+    --top-p 0.9 \
     --max-tokens 500
 ```
 
@@ -327,10 +327,10 @@ High temperature for creativity.
 ### Code Generation
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "def fibonacci(n):" \ \
-    --temperature 0.3 \ \
-    --top-p 0.95 \ \
+fundamentallm generate model.pt \
+    --prompt "def fibonacci(n):" \
+    --temperature 0.3 \
+    --top-p 0.95 \
     --max-tokens 200
 ```
 
@@ -339,9 +339,9 @@ Low temperature for correctness.
 ### Completion
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "The quick brown" \ \
-    --temperature 0.7 \ \
+fundamentallm generate model.pt \
+    --prompt "The quick brown" \
+    --temperature 0.7 \
     --max-tokens 50
 ```
 
@@ -350,10 +350,10 @@ Medium temperature for natural completion.
 ### Poetry
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "Roses are red," \ \
-    --temperature 1.0 \ \
-    --top-k 40 \ \
+fundamentallm generate model.pt \
+    --prompt "Roses are red," \
+    --temperature 1.0 \
+    --top-k 40 \
     --max-tokens 100
 ```
 
@@ -365,9 +365,9 @@ Balanced for structure + creativity.
 
 ```bash
 # Generate multiple outputs to file
-fundamentallm generate model.pt \ \
-    --prompt "The ancient scroll revealed" \ \
-    --num-samples 10 \ \
+fundamentallm generate model.pt \
+    --prompt "The ancient scroll revealed" \
+    --num-samples 10 \
     --output-file generations.txt
 ```
 
@@ -467,9 +467,9 @@ Next token probabilities:
 ```bash
 # Try different temperatures
 for temp in 0.3 0.7 1.0 1.5; do
-    fundamentallm generate model.pt \ \
-    --prompt "Test" \ \
-    --temperature $temp \ \
+    fundamentallm generate model.pt \
+    --prompt "Test" \
+    --temperature $temp \
     --max-tokens 50
 done
 ```

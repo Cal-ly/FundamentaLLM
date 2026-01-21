@@ -5,9 +5,9 @@ Comprehensive guide to training transformer language models with FundamentaLLM.
 ## Quick Start
 
 ```bash
-fundamentallm train data/raw/shakespeare/shakespeare100k.txt \ \
-    --output-dir my_model \ \
-    --epochs 20 \ \
+fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
+    --output-dir my_model \
+    --epochs 20 \
     --batch-size 32
 ```
 
@@ -271,25 +271,25 @@ Higher dropout when:
 
 ```bash
 # Step 1: Quick test (2 minutes)
-fundamentallm train data/samples/sample_data.txt \ \
-    --output-dir test_model \ \
-    --model-dim 64 \ \
-    --num-layers 2 \ \
+fundamentallm train data/samples/sample_data.txt \
+    --output-dir test_model \
+    --model-dim 64 \
+    --num-layers 2 \
     --epochs 3
 
 # Step 2: Medium training (20 minutes)
-fundamentallm train data/raw/shakespeare/shakespeare100k.txt \ \
-    --output-dir medium_model \ \
-    --model-dim 256 \ \
-    --num-layers 6 \ \
+fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
+    --output-dir medium_model \
+    --model-dim 256 \
+    --num-layers 6 \
     --epochs 20
 
 # Step 3: Full training (hours)
-fundamentallm train data/raw/shakespeare/shakespeare1mil.txt \ \
-    --output-dir large_model \ \
-    --model-dim 512 \ \
-    --num-layers 12 \ \
-    --epochs 50 \ \
+fundamentallm train data/raw/shakespeare/shakespeare1mil.txt \
+    --output-dir large_model \
+    --model-dim 512 \
+    --num-layers 12 \
+    --epochs 50 \
     --batch-size 64
 ```
 
@@ -546,9 +546,9 @@ At epoch 5, the model has learned to generalize best. After that, it's memorizin
 
 If you want to resume training from `best.pt`:
 ```bash
-fundamentallm train data.txt \ \
-    --output-dir my_model \ \
-    --resume-from my_model/best.pt \ \
+fundamentallm train data.txt \
+    --output-dir my_model \
+    --resume-from my_model/best.pt \
     --epochs 30  # Continue for more epochs
 ```
 
@@ -574,13 +574,13 @@ Speed up training with half-precision floats:
 ### Tiny Model (Testing)
 
 ```bash
-fundamentallm train data/samples/sample_data.txt \ \
-    --output-dir tiny_model \ \
-    --model-dim 64 \ \
-    --num-heads 2 \ \
-    --num-layers 2 \ \
-    --batch-size 16 \ \
-    --epochs 5 \ \
+fundamentallm train data/samples/sample_data.txt \
+    --output-dir tiny_model \
+    --model-dim 64 \
+    --num-heads 2 \
+    --num-layers 2 \
+    --batch-size 16 \
+    --epochs 5 \
     --learning-rate 0.001
 ```
 Time: ~2 minutes  
@@ -589,13 +589,13 @@ Use: Pipeline testing
 ### Small Model (Learning)
 
 ```bash
-fundamentallm train data/raw/shakespeare/shakespeare25k.txt \ \
-    --output-dir small_model \ \
-    --model-dim 128 \ \
-    --num-heads 4 \ \
-    --num-layers 4 \ \
-    --batch-size 32 \ \
-    --epochs 20 \ \
+fundamentallm train data/raw/shakespeare/shakespeare25k.txt \
+    --output-dir small_model \
+    --model-dim 128 \
+    --num-heads 4 \
+    --num-layers 4 \
+    --batch-size 32 \
+    --epochs 20 \
     --learning-rate 0.001
 ```
 Time: ~15 minutes  
@@ -604,15 +604,15 @@ Use: Understanding training dynamics
 ### Medium Model (Decent Quality)
 
 ```bash
-fundamentallm train data/raw/shakespeare/shakespeare100k.txt \ \
-    --output-dir medium_model \ \
-    --model-dim 256 \ \
-    --num-heads 8 \ \
-    --num-layers 6 \ \
-    --batch-size 32 \ \
-    --epochs 30 \ \
-    --learning-rate 0.0005 \ \
-    --dropout 0.1 \ \
+fundamentallm train data/raw/shakespeare/shakespeare100k.txt \
+    --output-dir medium_model \
+    --model-dim 256 \
+    --num-heads 8 \
+    --num-layers 6 \
+    --batch-size 32 \
+    --epochs 30 \
+    --learning-rate 0.0005 \
+    --dropout 0.1 \
     --mixed-precision
 ```
 Time: ~1 hour  
@@ -621,16 +621,16 @@ Use: Quality text generation
 ### Large Model (Best Quality)
 
 ```bash
-fundamentallm train data/raw/shakespeare/shakespeare1mil.txt \ \
-    --output-dir large_model \ \
-    --model-dim 512 \ \
-    --num-heads 16 \ \
-    --num-layers 12 \ \
-    --batch-size 64 \ \
-    --epochs 50 \ \
-    --learning-rate 0.0003 \ \
-    --dropout 0.2 \ \
-    --mixed-precision \ \
+fundamentallm train data/raw/shakespeare/shakespeare1mil.txt \
+    --output-dir large_model \
+    --model-dim 512 \
+    --num-heads 16 \
+    --num-layers 12 \
+    --batch-size 64 \
+    --epochs 50 \
+    --learning-rate 0.0003 \
+    --dropout 0.2 \
+    --mixed-precision \
     --gradient-clip 1.0
 ```
 Time: ~8 hours  

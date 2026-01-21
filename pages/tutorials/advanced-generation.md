@@ -109,9 +109,9 @@ top_k_probs = [0.4, 0.3, 0.15, 0.08, 0.05]
 **Usage:**
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "Once upon a time" \ \
-    --top-k 40 \ \
+fundamentallm generate model.pt \
+    --prompt "Once upon a time" \
+    --top-k 40 \
     --temperature 0.8
 ```
 
@@ -185,9 +185,9 @@ probs = [0.15, 0.14, 0.13, 0.12, 0.11, 0.10, ...]
 **Usage:**
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "Once upon a time" \ \
-    --top-p 0.9 \ \
+fundamentallm generate model.pt \
+    --prompt "Once upon a time" \
+    --top-p 0.9 \
     --temperature 0.8
 ```
 
@@ -231,10 +231,10 @@ def combined_sampling(logits, temperature=1.0, top_k=50, top_p=0.9):
 **Usage:**
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "Once upon a time" \ \
-    --temperature 0.8 \ \
-    --top-k 50 \ \
+fundamentallm generate model.pt \
+    --prompt "Once upon a time" \
+    --temperature 0.8 \
+    --top-k 50 \
     --top-p 0.9
 ```
 
@@ -280,8 +280,8 @@ def apply_repetition_penalty(logits, generated_tokens, penalty=1.2):
 **Usage:**
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "The cat" \ \
+fundamentallm generate model.pt \
+    --prompt "The cat" \
     --repetition-penalty 1.2
 ```
 
@@ -404,8 +404,8 @@ def beam_search(model, prompt_tokens, beam_width=5, max_length=100):
 **Usage:**
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "Once upon a time" \ \
+fundamentallm generate model.pt \
+    --prompt "Once upon a time" \
     --beam-width 5
 ```
 
@@ -671,9 +671,9 @@ def speculative_decoding(model, draft_model, prompt, k=4):
 Generate several, pick best:
 
 ```bash
-fundamentallm generate model.pt \ \
-    --prompt "Once upon a time" \ \
-    --num-samples 5 \ \
+fundamentallm generate model.pt \
+    --prompt "Once upon a time" \
+    --num-samples 5 \
     --temperature 0.9
 ```
 
