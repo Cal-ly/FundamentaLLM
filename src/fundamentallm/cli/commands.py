@@ -206,8 +206,9 @@ def _enforce_model_config(model_config: TransformerConfig, auto_fix: bool) -> No
     if critical:
         d_model = model_config.d_model
         rec_heads = _safe_num_heads(d_model, model_config.num_heads)
+        head_dim = d_model // rec_heads
         recommendation = (
-            f" Try num_heads={rec_heads} (head_dim={d_model // rec_heads}) or enable --auto-fix-config."
+            f" Try num_heads={rec_heads} (head_dim={head_dim}) or enable --auto-fix-config."
             if rec_heads != model_config.num_heads
             else ""
         )

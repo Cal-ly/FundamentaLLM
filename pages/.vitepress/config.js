@@ -131,11 +131,11 @@ export default defineConfig({
       ]
     },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/your-org/fundamentallm' }
+      { icon: 'github', link: 'https://github.com/Cal-ly/FundamentaLLM' }
     ],
     footer: {
       message: 'Released under the AGPL-3.0 License',
-      copyright: 'Copyright © 2024-2026 FundamentaLLM Contributors'
+      copyright: 'Copyright © 2026 FundamentaLLM - Carsten Lydeking'
     }
   }
 })
