@@ -261,16 +261,21 @@ class Trainer:
         return metrics
 
     def train(
-        self, num_epochs: Optional[int] = None, checkpoint_dir: Optional[Path | str] = None
+        self,
+        num_epochs: Optional[int] = None,
+        checkpoint_dir: Optional[Path | str] = None,
+        start_epoch: int = 0,
+        total_epochs: Optional[int] = None,
     ) -> list[Dict[str, float]]:
         history: list[Dict[str, float]] = []
         checkpoint_dir = Path(checkpoint_dir or self.config.checkpoint_dir)
         self.callbacks.on_train_begin(self)
 
         epochs = num_epochs if num_epochs is not None else getattr(self.config, "num_epochs", 1)
-        logger.info(f"Starting training for {epochs} epochs")
+        total = total_epochs if total_epochs is not None else start_epoch + epochs
+        logger.info(f"Starting training for {epochs} epochs (epochs {start_epoch + 1}-{start_epoch + epochs} of {total})")
 
-        for epoch in range(epochs):
+        for epoch in range(start_epoch, start_epoch + epochs):
             epoch_metrics = self.train_epoch(epoch)
             val_metrics = self.validate()
             combined = {"epoch": epoch, **epoch_metrics, **val_metrics}

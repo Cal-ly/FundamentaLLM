@@ -42,14 +42,20 @@ class InteractiveREPL:
             try:
                 prompt = Prompt.ask("[bold cyan]You[/bold cyan]")
                 lowered = prompt.lower()
-                if lowered in {"quit", "exit", "q"}:
+                if lowered in {"quit", "exit", "q", "/quit", "/exit"}:
                     self.console.print("[yellow]Goodbye![/yellow]")
                     break
-                if lowered == "help":
+                if lowered in {"help", "/help"}:
                     self._show_help()
                     continue
-                if lowered == "history":
+                if lowered in {"history", "/history"}:
                     self._show_history()
+                    continue
+                if lowered in {"/clear", "clear"}:
+                    self.console.clear()
+                    continue
+                if lowered in {"/status", "status"}:
+                    self._show_status()
                     continue
                 if prompt.startswith("/set "):
                     self._handle_settings(prompt)
@@ -78,7 +84,9 @@ class InteractiveREPL:
         help_text = (
             "[bold]Commands:[/bold]\n"
             "  quit, exit, q    - Exit interactive mode\n"
-            "  help             - Show this help\n"
+            "  /help            - Show this help\n"
+            "  /status          - Show current generation settings\n"
+            "  /clear           - Clear the screen\n"
             "  history          - Show conversation history\n"
             "  /set param=val   - Set parameters (temperature, max_tokens, top_k, top_p)\n\n"
             "[bold]Examples:[/bold]\n"
@@ -122,3 +130,12 @@ class InteractiveREPL:
                 self.console.print(f"[red]Unknown parameter: {param}[/red]")
         except ValueError as exc:
             self.console.print(f"[red]Invalid value: {exc}[/red]")
+
+    def _show_status(self) -> None:
+        status_lines = [
+            f"temperature = {self.temperature}",
+            f"max_tokens = {self.max_tokens}",
+            f"top_k = {self.top_k}",
+            f"top_p = {self.top_p}",
+        ]
+        self.console.print(Panel("\n".join(status_lines), title="Current Settings", border_style="cyan"))

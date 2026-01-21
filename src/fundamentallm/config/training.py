@@ -17,11 +17,11 @@ class TrainingConfig(BaseConfig):
     data_path: Optional[Path] = Field(None)
     train_split: float = Field(0.9, gt=0.0, lt=1.0)
     sequence_length: int = Field(256, gt=0)
-    batch_size: int = Field(32, gt=0)
+    batch_size: int = Field(16, gt=0)
     num_workers: int = Field(4, ge=0)
 
     # Optimization
-    learning_rate: float = Field(1e-4, gt=0)
+    learning_rate: float = Field(1e-3, gt=0)
     optimizer: str = Field("adamw", pattern="^(adamw|adam|sgd|rmsprop)$")
     optimizer_eps: float = Field(1e-8, gt=0)
     optimizer_weight_decay: float = Field(0.01, ge=0)
@@ -43,7 +43,7 @@ class TrainingConfig(BaseConfig):
     gradient_checkpointing: bool = Field(False)
     mixed_precision: bool = Field(False)
 
-    num_epochs: int = Field(3, gt=0)
+    num_epochs: int = Field(10, gt=0)
     max_epochs: Optional[int] = Field(None, gt=0)
     max_steps: Optional[int] = Field(None, gt=0)
     eval_steps: int = Field(100, ge=0)
@@ -66,7 +66,26 @@ class TrainingConfig(BaseConfig):
     deterministic: bool = Field(True)
 
     # Device
-    device: str = Field("cpu")
+    device: str = Field("auto")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _aliases(cls, data: dict) -> dict:
+        if not isinstance(data, dict):
+            return data
+
+        # YAML/CLI doc aliases
+        if "epochs" in data and "num_epochs" not in data:
+            data["num_epochs"] = data.pop("epochs")
+        if "max_seq_len" in data and "sequence_length" not in data:
+            data["sequence_length"] = data.pop("max_seq_len")
+        if "val_split" in data and "train_split" not in data:
+            try:
+                val = float(data.pop("val_split"))
+                data["train_split"] = 1.0 - val
+            except Exception:
+                data["train_split"] = data.get("train_split")
+        return data
 
     @field_validator("checkpoint_dir", "data_path", mode="before")
     @classmethod

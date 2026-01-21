@@ -84,6 +84,10 @@ def _apply_overrides(
     learning_rate: Optional[float],
     device: Optional[str],
     seed: Optional[int],
+    val_split: Optional[float],
+    sequence_length: Optional[int],
+    dropout: Optional[float],
+    mixed_precision: Optional[bool],
 ) -> None:
     if output_dir is not None:
         training_config.checkpoint_dir = Path(output_dir).expanduser()
@@ -97,6 +101,35 @@ def _apply_overrides(
         training_config.device = device
     if seed is not None:
         training_config.seed = seed
+    if val_split is not None:
+        training_config.train_split = 1.0 - val_split
+    if sequence_length is not None:
+        training_config.sequence_length = sequence_length
+    if dropout is not None:
+        training_config.dropout = dropout
+    if mixed_precision is not None:
+        training_config.mixed_precision = mixed_precision
+
+
+def _apply_model_overrides(
+    model_config: TransformerConfig,
+    *,
+    model_dim: Optional[int],
+    num_heads: Optional[int],
+    num_layers: Optional[int],
+    dropout: Optional[float],
+    sequence_length: Optional[int],
+) -> None:
+    if model_dim is not None:
+        model_config.d_model = model_dim
+    if num_heads is not None:
+        model_config.num_heads = num_heads
+    if num_layers is not None:
+        model_config.num_layers = num_layers
+    if dropout is not None:
+        model_config.dropout = dropout
+    if sequence_length is not None:
+        model_config.sequence_length = sequence_length
 
 
 def _build_scheduler(
@@ -154,8 +187,25 @@ def cli() -> None:
 @click.option("--epochs", type=int, help="Number of training epochs")
 @click.option("--batch-size", type=int, help="Batch size override")
 @click.option("--learning-rate", type=float, help="Learning rate override")
-@click.option("--device", type=click.Choice(["cpu", "cuda", "mps"]), help="Device override")
+@click.option("--model-dim", type=int, help="Model hidden dimension (d_model)")
+@click.option("--num-heads", type=int, help="Number of attention heads")
+@click.option("--num-layers", type=int, help="Number of transformer layers")
+@click.option("--dropout", type=float, help="Dropout rate")
+@click.option("--max-seq-len", type=int, help="Maximum sequence length")
+@click.option("--val-split", type=float, help="Validation split ratio")
+@click.option(
+    "--device",
+    type=click.Choice(["cpu", "cuda", "mps", "auto"]),
+    help="Device override (auto selects best available)",
+)
+@click.option("--mixed-precision/--no-mixed-precision", default=None, help="Use mixed precision")
 @click.option("--seed", type=int, help="Random seed override")
+@click.option(
+    "--resume-from",
+    type=click.Path(exists=True, path_type=Path),
+    help="Resume training from a checkpoint",
+)
+@click.option("--profile/--no-profile", default=False, help="Enable lightweight profiler")
 @click.option("--quiet", is_flag=True, help="Reduce logging verbosity")
 def train(
     data_path: Path,
@@ -164,8 +214,17 @@ def train(
     epochs: Optional[int],
     batch_size: Optional[int],
     learning_rate: Optional[float],
+    model_dim: Optional[int],
+    num_heads: Optional[int],
+    num_layers: Optional[int],
+    dropout: Optional[float],
+    max_seq_len: Optional[int],
+    val_split: Optional[float],
     device: Optional[str],
+    mixed_precision: Optional[bool],
     seed: Optional[int],
+    resume_from: Optional[Path],
+    profile: bool,
     quiet: bool,
 ) -> None:
     """Train a language model on text data."""
@@ -204,6 +263,10 @@ def train(
         learning_rate=learning_rate,
         device=device,
         seed=seed,
+        val_split=val_split,
+        sequence_length=max_seq_len,
+        dropout=dropout,
+        mixed_precision=mixed_precision,
     )
 
     # Validate device and apply fallback if needed
@@ -219,6 +282,15 @@ def train(
     model_config.vocab_size = tokenizer.vocab_size
     if model_config.sequence_length is None:
         model_config.sequence_length = training_config.sequence_length
+
+    _apply_model_overrides(
+        model_config,
+        model_dim=model_dim,
+        num_heads=num_heads,
+        num_layers=num_layers,
+        dropout=dropout,
+        sequence_length=max_seq_len,
+    )
 
     model_issues = validate_model_config(model_config)
     warn_on_issues(model_issues, "TransformerConfig")
@@ -267,10 +339,54 @@ def train(
         config=training_config,
     )
 
+    start_epoch = 0
+    if resume_from is not None:
+        try:
+            _, _, _, _, restored_epoch, restored_step = trainer.checkpoint_manager.load(
+                resume_from,
+                model=trainer.model,
+                optimizer=trainer.optimizer,
+                scheduler=trainer.scheduler,
+            )
+            trainer.global_step = restored_step
+            start_epoch = restored_epoch + 1
+            click.echo(f"Resumed from {resume_from} at epoch {restored_epoch + 1}, step {restored_step}")
+        except Exception as exc:
+            raise click.ClickException(f"Failed to resume from {resume_from}: {exc}") from exc
+
     click.echo("Training...")
-    history = trainer.train(
-        num_epochs=training_config.num_epochs, checkpoint_dir=training_config.checkpoint_dir
-    )
+    target_epochs = training_config.num_epochs
+    epochs_to_run = max(target_epochs - start_epoch, 0)
+    if epochs_to_run == 0:
+        click.echo("No epochs to run (already at or past target). Skipping training loop.")
+        history = []
+    else:
+        if profile:
+            profile_dir = Path(training_config.checkpoint_dir) / "profile"
+            ensure_dir(profile_dir)
+            try:
+                with torch.profiler.profile(
+                    activities=[torch.profiler.ProfilerActivity.CPU],
+                    record_shapes=False,
+                ) as prof:
+                    history = trainer.train(
+                        num_epochs=epochs_to_run,
+                        checkpoint_dir=training_config.checkpoint_dir,
+                        start_epoch=start_epoch,
+                        total_epochs=target_epochs,
+                    )
+                trace_path = profile_dir / "profile.json"
+                prof.export_chrome_trace(str(trace_path))
+                click.echo(f"Profiler trace saved to {trace_path}")
+            except Exception as exc:  # pragma: no cover - defensive
+                raise click.ClickException(f"Profiling failed: {exc}") from exc
+        else:
+            history = trainer.train(
+                num_epochs=epochs_to_run,
+                checkpoint_dir=training_config.checkpoint_dir,
+                start_epoch=start_epoch,
+                total_epochs=target_epochs,
+            )
 
     final_metrics = history[-1] if history else {}
     final_path = Path(training_config.checkpoint_dir) / "final_model.pt"
@@ -305,18 +421,20 @@ def train(
 @click.argument("model_path", type=click.Path(exists=True, path_type=Path))
 @click.option("--prompt", help="Initial prompt for generation")
 @click.option(
-    "--max-tokens", type=int, default=200, show_default=True, help="Maximum tokens to generate"
+    "--max-tokens", type=int, default=100, show_default=True, help="Maximum tokens to generate"
 )
 @click.option(
-    "--temperature", type=float, default=0.8, show_default=True, help="Sampling temperature"
+    "--temperature", type=float, default=1.0, show_default=True, help="Sampling temperature"
 )
 @click.option("--top-k", type=int, help="Top-k sampling")
-@click.option("--top-p", type=float, help="Top-p (nucleus) sampling")
+@click.option("--top-p", type=float, default=1.0, show_default=True, help="Top-p (nucleus) sampling")
+@click.option("--num-samples", type=int, default=1, show_default=True, help="Number of samples to generate")
+@click.option("--output-file", type=click.Path(path_type=Path), help="Write generations to file")
 @click.option("--interactive", is_flag=True, help="Launch interactive REPL")
 @click.option(
     "--device",
-    type=click.Choice(["cpu", "cuda", "mps"]),
-    default="cuda",
+    type=click.Choice(["cpu", "cuda", "mps", "auto"]),
+    default="auto",
     show_default=True,
     help="Device for inference",
 )
@@ -327,12 +445,19 @@ def generate(
     temperature: float,
     top_k: Optional[int],
     top_p: Optional[float],
+    num_samples: int,
+    output_file: Optional[Path],
     interactive: bool,
     device: str,
 ) -> None:
     """Generate text from a trained model."""
 
     setup_logging()
+
+    validated_device = validate_device(device)
+    if validated_device != device:
+        device = validated_device
+        click.echo(f"Device updated to: {validated_device}")
 
     generator = TextGenerator.from_checkpoint(model_path, device=device)
 
@@ -354,14 +479,27 @@ def generate(
 
     click.echo(f"Generating with T={temperature}, max_tokens={max_tokens}...")
     click.echo("-" * 80)
-    text = generator.generate(
-        prompt=prompt,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        top_k=top_k,
-        top_p=top_p,
-    )
-    click.echo(text)
+
+    outputs = []
+    for idx in range(num_samples):
+        text = generator.generate(
+            prompt=prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+        )
+        outputs.append(text)
+        label = f"Sample {idx + 1}" if num_samples > 1 else "Output"
+        click.echo(f"{label}:")
+        click.echo(text)
+        if num_samples > 1 and idx != num_samples - 1:
+            click.echo("-" * 40)
+
+    if output_file is not None:
+        ensure_dir(output_file.parent)
+        output_file.write_text("\n\n".join(outputs), encoding="utf-8")
+        click.echo(f"Generations written to {output_file}")
 
 
 @cli.command()
@@ -370,8 +508,8 @@ def generate(
 @click.option("--output", type=click.Path(path_type=Path), help="Save results to JSON")
 @click.option(
     "--device",
-    type=click.Choice(["cpu", "cuda", "mps"]),
-    default="cuda",
+    type=click.Choice(["cpu", "cuda", "mps", "auto"]),
+    default="auto",
     show_default=True,
     help="Device for evaluation",
 )
@@ -384,6 +522,11 @@ def evaluate(
     """Evaluate a trained model on test data."""
 
     setup_logging()
+
+    validated_device = validate_device(device)
+    if validated_device != device:
+        device = validated_device
+        click.echo(f"Device updated to: {validated_device}")
 
     evaluator = ModelEvaluator.from_checkpoint(model_path, device=device)
     text = data_path.read_text(encoding="utf-8")

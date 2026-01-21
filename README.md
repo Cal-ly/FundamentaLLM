@@ -7,6 +7,8 @@
 
 An educational, character-level transformer language model framework built in PyTorch. FundamentaLLM makes core LLM concepts approachable while maintaining production-quality engineering practices: type safety, comprehensive tests, and configuration-first design.
 
+Check out [FundamentaLLM](https://cal-ly.github.io/FundamentaLLM/) for more documentation and educational content.
+
 ## Features
 
 - **Educational Focus**: Clean, well-documented code designed for learning

@@ -104,3 +104,86 @@ def test_cli_train_generate_evaluate(tmp_path):
     )
     assert evaluate_result.exit_code == 0, evaluate_result.output
     assert "loss" in evaluate_result.output.lower()
+
+
+def test_cli_resume_and_multi_generate(tmp_path):
+    runner = CliRunner()
+
+    data_file = tmp_path / "data.txt"
+    data_file.write_text("hello world " * 50, encoding="utf-8")
+
+    checkpoint_dir = tmp_path / "checkpoints"
+    config_file = tmp_path / "config.yaml"
+    _write_config(config_file, checkpoint_dir)
+
+    # Initial 1-epoch run to create a checkpoint
+    train_result = runner.invoke(
+        cli,
+        [
+            "train",
+            str(data_file),
+            "--config",
+            str(config_file),
+            "--device",
+            "cpu",
+            "--epochs",
+            "1",
+            "--output-dir",
+            str(checkpoint_dir),
+            "--quiet",
+        ],
+    )
+    assert train_result.exit_code == 0, train_result.output
+
+    epoch_ckpt = checkpoint_dir / "epoch_0.pt"
+    assert epoch_ckpt.exists()
+
+    # Resume to a 2-epoch target, starting from epoch_0
+    resume_result = runner.invoke(
+        cli,
+        [
+            "train",
+            str(data_file),
+            "--config",
+            str(config_file),
+            "--device",
+            "cpu",
+            "--epochs",
+            "2",
+            "--output-dir",
+            str(checkpoint_dir),
+            "--resume-from",
+            str(epoch_ckpt),
+            "--quiet",
+        ],
+    )
+    assert resume_result.exit_code == 0, resume_result.output
+    assert "Resumed from" in resume_result.output
+
+    model_file = checkpoint_dir / "final_model.pt"
+    assert model_file.exists()
+
+    out_file = checkpoint_dir / "generations.txt"
+    generate_result = runner.invoke(
+        cli,
+        [
+            "generate",
+            str(model_file),
+            "--prompt",
+            "hello",
+            "--max-tokens",
+            "5",
+            "--device",
+            "cpu",
+            "--num-samples",
+            "2",
+            "--output-file",
+            str(out_file),
+        ],
+    )
+    assert generate_result.exit_code == 0, generate_result.output
+    assert out_file.exists()
+    content = out_file.read_text(encoding="utf-8")
+    assert "hello" in content.lower()
+    # We expect two samples separated by blank lines
+    assert content.count("\n\n") >= 1

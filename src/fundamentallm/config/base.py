@@ -12,14 +12,18 @@ from pydantic import BaseModel, ConfigDict
 T = TypeVar("T", bound="BaseConfig")
 
 
-def _apply_env_overrides(data: Dict[str, Any], prefix: str) -> None:
+def _apply_env_overrides(data: Dict[str, Any], prefixes: list[str]) -> None:
     """Apply environment variable overrides using PREFIX__SECTION__KEY naming."""
+
     for env_key, raw_value in os.environ.items():
-        if not env_key.startswith(prefix):
+        matched_prefix = next((p for p in prefixes if env_key.startswith(p)), None)
+        if matched_prefix is None:
             continue
-        key_path = env_key[len(prefix) :].lstrip("_")
+
+        key_path = env_key[len(matched_prefix) :].lstrip("_")
         if not key_path:
             continue
+
         keys = key_path.lower().split("__")
         cursor: Dict[str, Any] = data
         for key in keys[:-1]:
@@ -46,10 +50,17 @@ class BaseConfig(BaseModel):
             yaml.safe_dump(dumped, handle, sort_keys=False)
 
     @classmethod
-    def from_yaml(cls: Type[T], path: Path, env_prefix: str = "FLLM") -> T:
+    def from_yaml(
+        cls: Type[T], path: Path, env_prefix: str | list[str] = "FLLM"
+    ) -> T:
         path = Path(path)
         data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         if not isinstance(data, dict):
             raise ValueError("Configuration YAML must define a mapping at the root")
-        _apply_env_overrides(data, env_prefix)
+
+        prefixes = [env_prefix] if isinstance(env_prefix, str) else list(env_prefix)
+        # Support both legacy (FLLM__) and documented (FUNDAMENTALLM__) prefixes
+        if "FUNDAMENTALLM" not in prefixes:
+            prefixes.append("FUNDAMENTALLM")
+        _apply_env_overrides(data, prefixes)
         return cls.model_validate(data)
