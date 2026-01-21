@@ -88,6 +88,7 @@ def _apply_overrides(
     sequence_length: Optional[int],
     dropout: Optional[float],
     mixed_precision: Optional[bool],
+    gradient_clip: Optional[float],
 ) -> None:
     if output_dir is not None:
         training_config.checkpoint_dir = Path(output_dir).expanduser()
@@ -109,6 +110,8 @@ def _apply_overrides(
         training_config.dropout = dropout
     if mixed_precision is not None:
         training_config.mixed_precision = mixed_precision
+    if gradient_clip is not None:
+        training_config.gradient_clip_norm = gradient_clip
 
 
 def _apply_model_overrides(
@@ -259,6 +262,7 @@ def cli() -> None:
 )
 @click.option("--mixed-precision/--no-mixed-precision", default=None, help="Use mixed precision")
 @click.option("--seed", type=int, help="Random seed override")
+@click.option("--gradient-clip", type=float, help="Gradient clipping norm")
 @click.option(
     "--resume-from",
     type=click.Path(exists=True, path_type=Path),
@@ -282,6 +286,7 @@ def train(
     device: Optional[str],
     mixed_precision: Optional[bool],
     seed: Optional[int],
+    gradient_clip: Optional[float],
     resume_from: Optional[Path],
     profile: bool,
     quiet: bool,
@@ -326,6 +331,7 @@ def train(
         sequence_length=max_seq_len,
         dropout=dropout,
         mixed_precision=mixed_precision,
+        gradient_clip=gradient_clip,
     )
 
     # Validate device and apply fallback if needed
